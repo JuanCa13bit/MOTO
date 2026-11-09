@@ -1,0 +1,232 @@
+/* ============================================================
+   1. RESET + TOKENS (Mobile-First / Touch-Friendly / Dark)
+   ============================================================ */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0d1015; --card:#161b23; --card2:#1e242f; --bd:#2a3240;
+  --tx:#e9eef6; --mu:#94a3b8; --pr:#3b82f6; --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444;
+  --safe:env(safe-area-inset-bottom,0px);
+  --r:16px;
+}
+body.light{
+  --bg:#f1f5f9; --card:#ffffff; --card2:#eef2f7; --bd:#d9e2ec;
+  --tx:#0f172a; --mu:#5b6b80;
+}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--tx);
+  font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  padding-bottom:calc(100px + var(--safe));
+  overscroll-behavior-y:contain;
+  transition:background .2s,color .2s;
+}
+h1,h2,h3,h4{margin:0 0 8px;line-height:1.2}
+h2{font-size:17px;letter-spacing:.2px}
+h3{font-size:19px}
+p{margin:0 0 8px}
+.mu{color:var(--mu);font-size:14px}
+.sm{font-size:13px}
+.center{text-align:center}
+
+/* ============================================================
+   2. SHELL: topbar + tabbar
+   ============================================================ */
+.topbar{
+  position:sticky;top:0;z-index:60;display:flex;gap:8px;align-items:center;
+  padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px;
+  background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:blur(14px);border-bottom:1px solid var(--bd);
+}
+.bikesel{
+  flex:1;min-height:46px;border-radius:12px;border:1px solid var(--bd);
+  background:var(--card2);color:var(--tx);font:600 15px/1 inherit;padding:0 12px;
+  appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--mu) 50%),linear-gradient(135deg,var(--mu) 50%,transparent 50%);
+  background-position:calc(100% - 18px) 20px,calc(100% - 13px) 20px;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:34px;
+}
+.iconbtn{
+  width:46px;height:46px;flex:0 0 46px;border-radius:12px;border:1px solid var(--bd);
+  background:var(--card2);color:var(--tx);font-size:19px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.tabbar{
+  position:fixed;bottom:0;left:0;right:0;z-index:60;
+  display:grid;grid-template-columns:repeat(5,1fr);
+  background:var(--card);border-top:1px solid var(--bd);
+  padding:6px 4px calc(6px + var(--safe));
+}
+.tabbar button{
+  background:none;border:0;color:var(--mu);font:600 11px/1 inherit;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  min-height:58px;border-radius:12px;cursor:pointer;transition:color .15s;
+}
+.tabbar button .ico{font-size:21px;line-height:1}
+.tabbar button.on{color:var(--pr);background:color-mix(in srgb,var(--pr) 12%,transparent)}
+
+/* ============================================================
+   3. LAYOUT / CARDS
+   ============================================================ */
+main{padding:14px 12px 24px;max-width:640px;margin:0 auto}
+.card{
+  background:var(--card);border:1px solid var(--bd);border-radius:var(--r);
+  padding:16px;margin-bottom:12px;
+}
+.card.tight{padding:12px}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.card-h h2{margin:0}
+
+/* ============================================================
+   4. FORM CONTROLS (grandes, usables con guantes)
+   ============================================================ */
+label.fld{display:block;margin-bottom:12px;font-size:13px;font-weight:700;color:var(--mu);letter-spacing:.3px;text-transform:uppercase}
+input,select,textarea{
+  width:100%;min-height:54px;border-radius:13px;border:1px solid var(--bd);
+  background:var(--card2);color:var(--tx);padding:12px 14px;
+  font:16px/1.3 inherit;margin-top:6px;outline:none;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--pr);box-shadow:0 0 0 3px color-mix(in srgb,var(--pr) 25%,transparent)}
+input[type=checkbox]{width:26px;height:26px;min-height:0;margin:0;accent-color:var(--pr)}
+textarea{min-height:110px;resize:vertical}
+.btn{
+  width:100%;min-height:54px;border-radius:13px;border:1px solid var(--bd);
+  background:var(--card2);color:var(--tx);font:700 16px/1 inherit;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  cursor:pointer;padding:0 18px;transition:transform .08s,filter .15s;
+}
+.btn:active{transform:scale(.975)}
+.btn.primary{background:var(--pr);border-color:var(--pr);color:#fff}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#06240f}
+.btn.danger{background:var(--bad);border-color:var(--bad);color:#fff}
+.btn.ghost{background:transparent}
+.btn.sm{min-height:46px;font-size:15px;padding:0 14px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.inline{display:flex;gap:10px;align-items:center}
+.inline input{flex:1;margin-top:0}
+.inline .btn{width:auto;flex:0 0 auto;min-width:120px}
+.check{display:flex;align-items:center;gap:12px;min-height:54px;padding:0 14px;border:1px solid var(--bd);border-radius:13px;background:var(--card2);margin-bottom:12px;font-weight:600;cursor:pointer}
+
+/* ============================================================
+   5. SEMÁFORO / STATUS
+   ============================================================ */
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tile{
+  border-radius:14px;padding:12px 8px;text-align:center;border:1px solid var(--bd);
+  background:var(--card2);
+}
+.tile .t-lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--mu);font-weight:800}
+.tile .t-val{font-size:15px;font-weight:800;margin-top:4px}
+.tile .dot{width:12px;height:12px;border-radius:50%;display:inline-block;margin-bottom:6px}
+.st-green{--c:var(--ok)} .st-yellow{--c:var(--warn)} .st-red{--c:var(--bad)}
+.tile .dot{background:var(--c)}
+.tile.st-green{border-color:color-mix(in srgb,var(--ok) 45%,var(--bd))}
+.tile.st-yellow{border-color:color-mix(in srgb,var(--warn) 55%,var(--bd));background:color-mix(in srgb,var(--warn) 10%,var(--card2))}
+.tile.st-red{border-color:color-mix(in srgb,var(--bad) 60%,var(--bd));background:color-mix(in srgb,var(--bad) 13%,var(--card2))}
+
+/* listado de items de mantenimiento */
+.item{
+  display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;
+  background:var(--card2);border:1px solid var(--bd);margin-bottom:8px;
+  border-left:5px solid var(--c,var(--bd));
+}
+.item-ico{font-size:22px;flex:0 0 28px;text-align:center}
+.item-main{flex:1;min-width:0}
+.item-title{font-weight:700;font-size:15px}
+.item-sub{font-size:12.5px;color:var(--mu);margin-top:2px}
+.item .st-green{--c:var(--ok)} .item .st-yellow{--c:var(--warn)} .item .st-red{--c:var(--bad)}
+.btn-mini{
+  flex:0 0 auto;width:46px;height:46px;border-radius:12px;border:1px solid var(--bd);
+  background:var(--card);color:var(--tx);font-size:22px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.btn-mini.primary{background:var(--pr);border-color:var(--pr);color:#fff}
+
+/* ============================================================
+   6. ALERTAS / BANNERS
+   ============================================================ */
+.banner{
+  display:flex;gap:12px;align-items:flex-start;padding:13px 14px;border-radius:14px;
+  margin-bottom:10px;border:1px solid var(--c);background:color-mix(in srgb,var(--c) 14%,var(--card));
+  font-size:14px;line-height:1.4;
+}
+.banner .b-ico{font-size:20px;line-height:1.2}
+.banner b{display:block;margin-bottom:2px}
+.banner.st-green{--c:var(--ok)} .banner.st-yellow{--c:var(--warn)} .banner.st-red{--c:var(--bad)} .banner.st-info{--c:var(--pr)}
+
+/* ============================================================
+   7. NÚMEROS GRANDES / STATS
+   ============================================================ */
+.big{font-size:38px;font-weight:800;letter-spacing:-1.5px;line-height:1}
+.big small{font-size:15px;font-weight:700;color:var(--mu);letter-spacing:0}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:var(--card2);border:1px solid var(--bd);border-radius:13px;padding:11px 12px}
+.stat .s-lbl{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mu);font-weight:800}
+.stat .s-val{font-size:19px;font-weight:800;margin-top:3px}
+.stat .s-val small{font-size:12px;color:var(--mu);font-weight:600}
+
+/* ============================================================
+   8. LISTAS / HISTORIAL
+   ============================================================ */
+.rec{
+  display:flex;gap:12px;align-items:center;padding:12px;border-radius:13px;
+  background:var(--card2);border:1px solid var(--bd);margin-bottom:8px;
+}
+.rec-ico{font-size:19px;flex:0 0 24px;text-align:center}
+.rec-main{flex:1;min-width:0}
+.rec-t{font-weight:700;font-size:14.5px}
+.rec-s{font-size:12.5px;color:var(--mu);margin-top:2px}
+.rec-v{font-weight:800;font-size:15px;text-align:right;white-space:nowrap}
+.rec-del{
+  flex:0 0 auto;width:40px;height:40px;border-radius:11px;border:1px solid var(--bd);
+  background:transparent;color:var(--bad);font-size:17px;cursor:pointer;
+}
+.empty{text-align:center;padding:26px 10px;color:var(--mu);font-size:14px}
+
+/* ============================================================
+   9. MODAL
+   ============================================================ */
+#modal{position:fixed;inset:0;z-index:100;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(3px)}
+#modal.open{display:flex}
+.modal-card{
+  width:100%;max-width:560px;background:var(--card);border:1px solid var(--bd);
+  border-radius:22px 22px 0 0;padding:20px 16px calc(20px + var(--safe));
+  max-height:92vh;overflow:auto;animation:up .22s ease-out;
+}
+@keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+
+/* ============================================================
+   10. CHART / TABLAS / MISC
+   ============================================================ */
+.chart{display:block;width:100%;height:auto;margin-top:6px}
+table.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+table.tbl th,table.tbl td{padding:7px 6px;border-bottom:1px solid var(--bd);text-align:left;vertical-align:top}
+table.tbl th{font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--mu)}
+.scroll-x{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.cfgrow{padding:11px 0;border-bottom:1px solid var(--bd)}
+.cfgrow:last-child{border-bottom:0}
+.cfgname{font-weight:700;font-size:14px;margin-bottom:7px}
+.cfginputs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.cfginputs label{font-size:10.5px;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.cfginputs input{min-height:46px;padding:8px 10px;margin-top:4px;font-size:15px}
+.menu-btn{
+  display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:0 16px;
+  border-radius:14px;border:1px solid var(--bd);background:var(--card2);color:var(--tx);
+  font:600 15.5px/1.2 inherit;cursor:pointer;margin-bottom:9px;text-align:left;
+}
+.menu-btn .m-ico{font-size:20px}
+.menu-btn .m-arrow{margin-left:auto;color:var(--mu);font-size:18px}
+.pill{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.3px;background:var(--card2);border:1px solid var(--bd);color:var(--mu)}
+.pill.red{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,transparent)}
+.pill.yellow{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,transparent)}
+.pill.green{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,transparent)}
+hr.sep{border:0;border-top:1px solid var(--bd);margin:14px 0}
+
+/* ============================================================
+   11. IMPRESIÓN (Ficha de venta)
+   ============================================================ */
+@media print{
+  .topbar,.tabbar,.no-print,#modal{display:none!important}
+  body{background:#fff;color:#000;padding:0}
+  .card{border:1px solid #ccc;break-inside:avoid}
+  main{max-width:none;padding:0}
+}
