@@ -1,5 +1,4 @@
 export const LEVEL_RANK = { green:0, yellow:1, red:2 };
-
 export const $ = (s, r = document) => r.querySelector(s);
 export const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 export const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -54,7 +53,6 @@ export function parseDate(v) {
 }
 
 export const normKey = s => String(s ?? "").toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
-
 export function downloadFile(content, filename, mime) {
   const blob = new Blob([content], { type: mime });
   const url = URL.createObjectURL(blob);
@@ -62,7 +60,6 @@ export function downloadFile(content, filename, mime) {
   document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 500);
 }
-
 export function slug(s) {
   return String(s || "moto").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }

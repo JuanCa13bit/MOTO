@@ -1,4 +1,4 @@
-import { fmt, fmt0, addMonths, addDays, daysUntil, worst, todayISO } from './utils.js';
+import { fmt, fmt0, addMonths, addDays, daysUntil, worst, todayISO } from './utils.js?v=8';
 
 export function computeStatus(bike, key) {
   const cfg = bike.config[key] || {};
@@ -52,7 +52,6 @@ export function statusText(s) {
 export function fuelStats(bike) {
   const fills = [...bike.fuel].sort((a, b) => (a.km - b.km) || (a.date < b.date ? -1 : 1));
   const fulls = fills.filter(f => f.fullTank);
-  
   const segments = [];
   for (let i = 1; i < fulls.length; i++) {
     const a = fulls[i - 1], b = fulls[i];
@@ -90,7 +89,6 @@ export function fuelStats(bike) {
       distSince, avg, used, addedAfter, capacity: bike.tankCapacity
     };
   }
-  
   const lastSeg = segments.length ? segments[segments.length - 1] : null;
   const dropPct = (avg && lastSeg && bike.fixedEfficiency === 0) ? ((avg - lastSeg.kmg) / avg) * 100 : 0;
   return { fills, fulls, segments, avg, totalCost, costPerKm, monthSpend, remaining, autonomy, lastSeg, dropPct, distTotal, gallonsTotal: fills.reduce((s, f) => s + (f.gallons || 0), 0), calcDetails };

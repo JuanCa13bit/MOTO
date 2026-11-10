@@ -1,10 +1,10 @@
-import { $, $$, toNum, todayISO, fmt0, downloadFile, slug } from './utils.js?v=7';
-import { STATE, loadState, defaultState, saveState, activeBike, newBike, syncOdometer, commit } from './state.js?v=7';
-import { UI } from './ui.js?v=7';
-import { render } from './render.js?v=7';
-import * as views from './views.js?v=7';
-import * as imp from './import.js?v=7';
-import { fuelStats, autonomyLevel } from './calc.js?v=7';
+import { $, $$, toNum, todayISO, fmt0, downloadFile, slug } from './utils.js?v=8';
+import { STATE, loadState, defaultState, saveState, activeBike, newBike, syncOdometer, commit } from './state.js?v=8';
+import { UI } from './ui.js?v=8';
+import { render } from './render.js?v=8';
+import * as views from './views.js?v=8';
+import * as imp from './import.js?v=8';
+import { fuelStats, autonomyLevel } from './calc.js?v=8';
 
 document.addEventListener("click", e => {
   const el = e.target.closest("[data-act]");

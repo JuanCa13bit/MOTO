@@ -1,7 +1,7 @@
-import { $, esc, parseNum, parseDate, todayISO, normKey, fmt0, uid } from './utils.js';
-import { STATE, activeBike, syncOdometer, commit, migrate } from './state.js';
-import { UI } from './ui.js';
-import { render } from './render.js';
+import { $, esc, parseNum, parseDate, todayISO, normKey, fmt0, uid } from './utils.js?v=8';
+import { STATE, activeBike, syncOdometer, commit, migrate } from './state.js?v=8';
+import { UI } from './ui.js?v=8';
+import { render } from './render.js?v=8';
 
 const HEADER_ALIASES = {
   type:      ["tipo", "categoria", "category", "registro", "clase"],
@@ -58,8 +58,6 @@ export function runAnalyzeImport() {
     const ta = $("#importText");
     const text = (ta ? ta.value : "").trim();
     if (!text) return alert("Pega los datos o sube un archivo primero.");
-    
-    // Si el usuario pega un JSON en la caja de CSV, lo movemos a la caja de JSON
     if (text.startsWith("{")) { 
       const taRestore = $("#restoreText");
       if (taRestore) taRestore.value = text;

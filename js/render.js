@@ -1,7 +1,7 @@
-import { $, $$, esc } from './utils.js';
-import { STATE, activeBike } from './state.js';
-import { UI } from './ui.js';
-import * as views from './views.js';
+import { $, $$, esc } from './utils.js?v=8';
+import { STATE, activeBike } from './state.js?v=8';
+import { UI } from './ui.js?v=8';
+import * as views from './views.js?v=8';
 
 export function render() {
   const b = activeBike();

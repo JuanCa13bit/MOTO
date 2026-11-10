@@ -1,7 +1,6 @@
-import { uid, todayISO, parseDate } from './utils.js';
+import { uid, todayISO, parseDate } from './utils.js?v=8';
 
 export const STORAGE_KEY = "motocontrol.v1";
-
 export const DEFAULT_CONFIG = {
   oil:          { label:"Aceite de motor",        icon:"🛢️", km:3000,  months:6  },
   brakeFluid:   { label:"Líquido de frenos",      icon:"🧴", km:null,  months:24 },
@@ -29,7 +28,7 @@ export function newBike(name) {
   return {
     id: uid(), name: name || "Mi Moto", createdAt: new Date().toISOString(),
     odometer: 0, tankCapacity: 3, consumptionAlertPct: 15, currency: "$",
-    fixedEfficiency: 0, // Si es mayor a 0, ignora el promedio histórico
+    fixedEfficiency: 0,
     config: JSON.parse(JSON.stringify(DEFAULT_CONFIG)),
     fuel: [], maintenance: [], docs: {}
   };
@@ -50,7 +49,7 @@ export function migrate(raw) {
     b.tankCapacity = Number(b.tankCapacity) || 3;
     b.consumptionAlertPct = isFinite(b.consumptionAlertPct) ? Number(b.consumptionAlertPct) : 15;
     b.currency = b.currency || "$";
-    b.fixedEfficiency = Number(b.fixedEfficiency) || 0; // Aseguramos que exista
+    b.fixedEfficiency = Number(b.fixedEfficiency) || 0;
     const cfg = {};
     for (const k of Object.keys(DEFAULT_CONFIG)) {
       cfg[k] = Object.assign({}, DEFAULT_CONFIG[k], (b.config && b.config[k]) || {});
