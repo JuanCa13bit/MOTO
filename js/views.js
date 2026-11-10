@@ -1,6 +1,6 @@
 import { $, esc, fmt, fmt0, humanDate, todayISO, LEVEL_RANK } from './utils.js';
 import { STATE, activeBike, DOC_TYPES, syncOdometer } from './state.js';
-import { computeStatus, statusText, fuelStats, consumptionLevel, autonomyLevel } from './calc.js';
+import { computeStatus, statusText, fuelStats, consumptionLevel, autonomyLevel, getFuelLevelInfo, getMaintRemaining } from './calc.js';
 import { UI } from './ui.js';
 
 export function renderChart(segments) {
@@ -30,34 +30,29 @@ export function renderChart(segments) {
 
 export function viewDash(b) {
   const st = fuelStats(b);
-  const statuses = Object.keys(b.config).map(k => computeStatus(b, k));
-  const maintLevel = statuses.length ? statuses.map(s => s.level).reduce((a, c) => LEVEL_RANK[a] >= LEVEL_RANK[c] ? a : c, "green") : "green";
-  const consLevel = consumptionLevel(b, st);
+  const fuelInfo = getFuelLevelInfo(st, b.tankCapacity);
   const autoLevel = autonomyLevel(b, st);
-  const pending = statuses.filter(s => s.level !== "green").sort((a, b2) => LEVEL_RANK[b2.level] - LEVEL_RANK[a.level]).slice(0, 4);
-  
-  const banners = [];
-  if (st.autonomy !== null) {
-    const txt = autoLevel === "red" ? `¡Reserva! Te quedan ~${fmt0(st.autonomy)} km (${fmt(st.remaining, 2)} gal)` : `Autonomía estimada: ~${fmt0(st.autonomy)} km (${fmt(st.remaining, 2)} gal)`;
-    banners.push(`<div class="banner st-${autoLevel}"><span class="b-ico">⛽</span><div><b>Combustible</b>${txt}</div></div>`);
-  }
-  if (consLevel === "red") {
-    banners.push(`<div class="banner st-red"><span class="b-ico">⚠️</span><div><b>Consumo anormal (+${fmt(st.dropPct, 0)}%)</b>¡Atención! Tu moto está consumiendo un ${fmt(st.dropPct, 0)}% más de lo habitual. Revisa: neumáticos, filtro de aire, bujía o cadena.</div></div>`);
-  }
-  statuses.forEach(s => {
-    if (s.level !== "red") return;
-    let msg = "";
-    if (s.kmCheck && s.kmCheck.rem < 0) msg = `Superaste por ${fmt0(Math.abs(s.kmCheck.rem))} km el intervalo.`;
-    else if (s.dateCheck && s.dateCheck.days < 0) msg = `Vencido hace ${Math.abs(s.dateCheck.days)} días.`;
-    banners.push(`<div class="banner st-red"><span class="b-ico">🔴</span><div><b>${s.cfg.icon} ${esc(s.cfg.label)}</b>${msg}</div></div>`);
-  });
-  statuses.forEach(s => {
-    if (s.level !== "yellow") return;
-    banners.push(`<div class="banner st-yellow"><span class="b-ico">🟡</span><div><b>${s.cfg.icon} ${esc(s.cfg.label)}</b>${statusText(s)}</div></div>`);
-  });
-  if (!banners.length) banners.push(`<div class="banner st-green"><span class="b-ico">✅</span><div><b>Todo al día</b>Sin alertas pendientes. ¡Buen trabajo!</div></div>`);
+  const pendingMaint = getMaintRemaining(b).filter(s => s.level !== "green").slice(0, 3);
+
+  // Tarjetas de Próximos Mantenimientos (Siempre visible)
+  const maintCards = pendingMaint.map(s => {
+    let detalle = "";
+    if (s.kmCheck && s.kmCheck.rem > 0) detalle = `En ${fmt0(s.kmCheck.rem)} km`;
+    else if (s.kmCheck && s.kmCheck.rem <= 0) detalle = `¡Vencido por ${fmt0(Math.abs(s.kmCheck.rem))} km!`;
+    else if (s.dateCheck) detalle = s.dateCheck.days >= 0 ? `En ${s.dateCheck.days} días` : `Vencido hace ${Math.abs(s.dateCheck.days)} d`;
+    
+    return `
+    <div class="item st-${s.level}" style="margin-bottom:6px">
+      <div class="item-ico">${s.cfg.icon || "🔧"}</div>
+      <div class="item-main">
+        <div class="item-title">${esc(s.cfg.label)}</div>
+        <div class="item-sub" style="font-weight:600;color:var(--${s.level === 'red' ? 'bad' : s.level === 'yellow' ? 'warn' : 'ok'})">${detalle}</div>
+      </div>
+    </div>`;
+  }).join("") || `<div class="empty">🟢 Sin vencimientos próximos</div>`;
 
   return `
+  <!-- ODÓMETRO RÁPIDO -->
   <section class="card">
     <div class="card-h"><h2>Kilometraje actual</h2><span class="pill">${esc(b.name)}</span></div>
     <div class="inline">
@@ -65,27 +60,34 @@ export function viewDash(b) {
       <button class="btn primary" data-act="saveOdo">Guardar</button>
     </div>
   </section>
-  <section class="card tight">
-    <div class="tiles">
-      <div class="tile st-${maintLevel}"><span class="dot"></span><div class="t-lbl">Mantenimiento</div><div class="t-val">${maintLevel === "green" ? "Al día" : maintLevel === "yellow" ? "Pronto" : "Urgente"}</div></div>
-      <div class="tile st-${consLevel}"><span class="dot"></span><div class="t-lbl">Consumo</div><div class="t-val">${consLevel === "green" ? "Normal" : "Anormal"}</div></div>
-      <div class="tile st-${autoLevel}"><span class="dot"></span><div class="t-lbl">Autonomía</div><div class="t-val">${st.autonomy === null ? "—" : fmt0(st.autonomy) + " km"}</div></div>
+
+  <!-- MEDIDOR DE GASOLINA GIGANTE -->
+  <section class="card st-${autoLevel}" style="border-width:2px; border-color:var(--c,var(--bd))">
+    <div class="card-h" style="margin-bottom:2px">
+      <h2 style="color:var(--c,var(--tx))">${fuelInfo.icon} Combustible</h2>
+      <span class="pill" style="background:var(--c,var(--bd));color:#fff;border:0">${fuelInfo.text}</span>
+    </div>
+    <div class="big">${st.autonomy !== null ? `~${fmt0(st.autonomy)}` : '—'} <small>km restantes</small></div>
+    <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:12px; color:var(--mu); font-weight:600">
+      <span>${fmt(st.remaining, 2)} gal estimados</span>
+      <span>Capacidad: ${fmt(b.tankCapacity, 1)} gal</span>
+    </div>
+    <!-- Barra de progreso visual -->
+    <div style="width:100%; height:12px; background:var(--card2); border-radius:10px; margin-top:10px; overflow:hidden; border:1px solid var(--bd)">
+      <div style="width:${Math.min(100, Math.max(0, fuelInfo.pct * 100))}%; height:100%; background:var(--c, var(--pr)); transition:width 0.3s ease"></div>
     </div>
   </section>
-  <section>${banners.join("")}</section>
+
+  <!-- SEMÁFORO DE MANTENIMIENTO -->
   <section class="card">
-    <div class="card-h"><h2>Resumen</h2></div>
-    <div class="stats">
-      <div class="stat"><div class="s-lbl">Rendimiento</div><div class="s-val">${st.avg ? fmt(st.avg, 2) : "—"} <small>km/gal</small></div></div>
-      <div class="stat"><div class="s-lbl">Costo por km</div><div class="s-val">${st.costPerKm ? esc(b.currency) + fmt(st.costPerKm, 3) : "—"}</div></div>
-      <div class="stat"><div class="s-lbl">Gasto del mes</div><div class="s-val">${esc(b.currency)}${fmt(st.monthSpend, 2)}</div></div>
-      <div class="stat"><div class="s-lbl">Tanque</div><div class="s-val">${fmt(st.remaining, 2)} <small>/ ${fmt(b.tankCapacity, 1)} gal</small></div></div>
+    <div class="card-h">
+      <h2>Próximos Vencimientos</h2>
+      <button class="btn-mini" data-act="nav" data-view="maint" title="Ver todo">→</button>
     </div>
+    ${maintCards}
   </section>
-  <section class="card">
-    <div class="card-h"><h2>Próximos vencimientos</h2><button class="btn-mini" data-act="nav" data-view="maint" title="Ver todo">→</button></div>
-    ${pending.length ? pending.map(s => itemHTML(s)).join("") : `<div class="empty">🟢 Todo al día. Sin vencimientos próximos.</div>`}
-  </section>
+
+  <!-- ACCIONES RÁPIDAS -->
   <section class="row2" style="margin-bottom:12px">
     <button class="btn primary" data-act="nav" data-view="fuel">⛽ Cargar gasolina</button>
     <button class="btn" data-act="openMaintPicker">🔧 Mantenimiento</button>
@@ -128,7 +130,7 @@ export function viewFuel(b) {
         <label class="fld">Galones<input type="number" name="gallons" inputmode="decimal" step="0.01" min="0" placeholder="0.00" required></label>
         <label class="fld">Costo total<input type="number" name="cost" inputmode="decimal" step="0.01" min="0" placeholder="0.00" required></label>
       </div>
-      <label class="check"><input type="checkbox" name="fullTank" checked>¿Tanque lleno?</label>
+      <label class="check"><input type="checkbox" name="fullTank" checked>¿Llenaste el tanque hasta el tope?</label>
       <button class="btn primary" type="submit">Guardar carga</button>
     </form>
   </section>
@@ -139,7 +141,7 @@ export function viewFuel(b) {
       <div class="stat"><div class="s-lbl">Promedio histórico</div><div class="s-val">${st.avg ? fmt(st.avg, 2) : "—"} <small>km/gal</small></div></div>
       <div class="stat"><div class="s-lbl">Último tanque</div><div class="s-val">${st.lastSeg ? fmt(st.lastSeg.kmg, 2) : "—"} <small>km/gal</small></div></div>
       <div class="stat"><div class="s-lbl">Costo por km</div><div class="s-val">${st.costPerKm ? esc(b.currency) + fmt(st.costPerKm, 3) : "—"}</div></div>
-      <div class="stat"><div class="s-lbl">Autonomía</div><div class="s-val">${st.autonomy === null ? "—" : fmt0(st.autonomy)} <small>km</small></div></div>
+      <div class="stat"><div class="s-lbl">Gasto del mes</div><div class="s-val">${esc(b.currency)}${fmt(st.monthSpend, 2)}</div></div>
     </div>
   </section>
   <section class="card">
@@ -366,8 +368,8 @@ export function viewBackup(b) {
   </section>
   <section class="card">
     <div class="card-h"><h2>Pasar mi historial</h2></div>
-    <p class="mu sm">Pega desde <b>Excel / Google Sheets</b> o sube un CSV. Asegúrate de tener una columna <b>Tipo</b> (que diga "gasolina" o "manto"). Si quieres meter mantenimientos, pon una columna <b>Servicio</b> (ej: "aceite", "frenos").</p>
-    <label class="fld">Pegar datos<textarea id="importText" placeholder="tipo,fecha,km,galones,costo,lleno,servicio,notas&#10;gasolina,2024-03-01,5200,2.5,12.50,si,,""></textarea></label>
+    <p class="mu sm">Pega desde <b>Excel / Google Sheets</b> o sube un CSV.</p>
+    <label class="fld">Pegar datos<textarea id="importText" placeholder="tipo,fecha,km,galones,costo,lleno,servicio,notas&#10;gasolina,2024-03-01,5200,2.5,12.50,si,,"></textarea></label>
     <label class="fld">…o subir archivo<input type="file" id="importFile" accept=".csv,.txt,.json"></label>
     <button class="btn primary" data-act="analyzeImport">Analizar</button>
   </section>
