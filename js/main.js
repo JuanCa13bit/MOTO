@@ -56,7 +56,7 @@ document.addEventListener("click", e => {
       b.tankCapacity = Math.max(toNum($("#cfgTank").value) || 0, 0);
       b.consumptionAlertPct = Math.min(Math.max(toNum($("#cfgAlert").value) || 15, 1), 90);
       b.currency = ($("#cfgCur").value || "$").trim() || "$";
-      b.fixedEfficiency = Math.max(toNum($("#cfgEff").value) || 0, 0); // Guardamos el rendimiento fijo
+      b.fixedEfficiency = Math.max(toNum($("#cfgEff").value) || 0, 0); // GUARDAMOS EL RENDIMIENTO FIJO
       commit(); alert("Datos guardados ✅"); break;
     }
     case "saveIntervals": {

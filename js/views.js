@@ -72,7 +72,9 @@ export function viewDash(b) {
     <div style="width:100%; height:12px; background:var(--card2); border-radius:10px; margin-top:10px; overflow:hidden; border:1px solid var(--bd)">
       <div style="width:${Math.min(100, Math.max(0, fuelInfo.pct * 100))}%; height:100%; background:var(--c, var(--pr)); transition:width 0.3s ease"></div>
     </div>
-    ${b.fixedEfficiency > 0 ? `<p class="sm center" style="margin-top:6px;color:var(--ok)">Rendimiento fijo aplicado: ${b.fixedEfficiency} km/gal</p>` : ''}
+    ${b.fixedEfficiency > 0 
+      ? `<p class="sm center" style="margin-top:6px;color:var(--ok)">Rendimiento fijo aplicado: ${b.fixedEfficiency} km/gal</p>` 
+      : `<p class="sm center" style="margin-top:6px;color:var(--warn); cursor:pointer" data-act="sub" data-sub="config">⚠️ Toca aquí para configurar tu rendimiento real</p>`}
   </section>
 
   <section class="card">
@@ -87,18 +89,6 @@ export function viewDash(b) {
     <button class="btn primary" data-act="nav" data-view="fuel">⛽ Cargar gasolina</button>
     <button class="btn" data-act="openMaintPicker">🔧 Mantenimiento</button>
   </section>`;
-}
-
-export function itemHTML(s) {
-  return `
-  <div class="item st-${s.level}">
-    <div class="item-ico">${s.cfg.icon || "🔧"}</div>
-    <div class="item-main">
-      <div class="item-title">${esc(s.cfg.label)}</div>
-      <div class="item-sub">${esc(statusText(s))}</div>
-    </div>
-    <button class="btn-mini primary" data-act="openMaint" data-type="${s.key}" title="Registrar">+</button>
-  </div>`;
 }
 
 export function viewFuel(b) {
@@ -264,7 +254,7 @@ export function viewConfig(b) {
     </div>
     <div class="row2">
       <label class="fld">Moneda<input type="text" id="cfgCur" maxlength="3" value="${esc(b.currency)}"></label>
-      <label class="fld" title="Si pones un número aquí, la app ignorará el promedio histórico para calcular la autonomía.">Rendimiento Fijo (km/gal)<input type="number" id="cfgEff" step="0.1" min="0" placeholder="Ej: 35" value="${b.fixedEfficiency || ''}"></label>
+      <label class="fld" title="Si pones un número aquí, la app ignorará el promedio histórico para calcular la autonomía.">Rendimiento Fijo (km/gal)<input type="number" id="cfgEff" step="1" min="0" placeholder="Ej: 120" value="${b.fixedEfficiency || ''}"></label>
     </div>
     <button class="btn primary" data-act="saveBikeCfg">Guardar datos</button>
   </section>
