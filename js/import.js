@@ -1,5 +1,5 @@
-import { $, esc, parseNum, parseDate, todayISO, normKey, fmt0 } from './utils.js';
-import { STATE, activeBike, syncOdometer, commit } from './state.js';
+import { $, esc, parseNum, parseDate, todayISO, normKey, fmt0, uid } from './utils.js'; // <-- uid agregado aquí
+import { STATE, activeBike, syncOdometer, commit, migrate } from './state.js'; // <-- migrate agregado aquí
 import { UI } from './ui.js';
 import { render } from './render.js';
 
@@ -139,8 +139,8 @@ export function runRestoreJSON() {
     const obj = JSON.parse(txt);
     if (!obj || !Array.isArray(obj.bikes) || !obj.bikes.length) return alert("El JSON no contiene motos válidas.");
     if (!confirm("Esto reemplazará TODOS los datos actuales. ¿Continuar?")) return;
-    // En lugar de STATE = obj, mutamos el objeto original para no romper referencias
-    const migrated = migrate(obj);
+    
+    const migrated = migrate(obj); // <-- Ahora sí está importado arriba
     STATE.bikes = migrated.bikes;
     STATE.activeBikeId = migrated.activeBikeId;
     STATE.theme = migrated.theme;
