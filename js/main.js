@@ -17,32 +17,25 @@ document.addEventListener("click", e => {
     case "sub": UI.sub = el.dataset.sub === "null" ? null : el.dataset.sub; UI.importPreview = null; render(); break;
     case "toggleTheme": STATE.theme = STATE.theme === "light" ? "dark" : "light"; commit(); break;
     case "closeModal": views.closeModal(); break;
-    
-    // --- LÓGICA DE GUARDAR ODÓMETRO CON ALERTA ---
     case "saveOdo": { 
       const v = toNum($("#odoInput").value); 
       if (!isFinite(v) || v < 0) return alert("Ingresa un kilometraje válido."); 
       
-      // 1. Guardamos el nuevo kilometraje
       b.odometer = v; 
       syncOdometer(b); 
       
-      // 2. Calculamos cómo va la gasolina con este nuevo km
       const st = fuelStats(b);
       const lvl = autonomyLevel(b, st);
       
-      // 3. Lanzamos las alertas si es necesario
       if (st.autonomy !== null && lvl === "red") {
         alert(`⚠️ ¡CUIDADO! TE ESTÁS QUEDANDO SIN GASOLINA.\n\nAutonomía estimada: ~${Math.round(st.autonomy)} km\nCombustible restante: ${st.remaining.toFixed(2)} gal\n\n¡Busca una gasolinera pronto!`);
       } else if (st.autonomy !== null && lvl === "yellow") {
         alert(`⛽ Te queda poca gasolina.\n\nAutonomía estimada: ~${Math.round(st.autonomy)} km\nCombustible restante: ${st.remaining.toFixed(2)} gal`);
       }
       
-      // 4. Guardamos los cambios y pintamos la pantalla
       commit(); 
       break; 
     }
-
     case "delFuel": { const id = el.dataset.id; if (!confirm("¿Eliminar esta carga?")) return; b.fuel = b.fuel.filter(f => f.id !== id); commit(); break; }
     case "openMaint": views.modalMaint(b, el.dataset.type); break;
     case "openMaintPicker": views.modalMaintPicker(b); break;
@@ -63,6 +56,7 @@ document.addEventListener("click", e => {
       b.tankCapacity = Math.max(toNum($("#cfgTank").value) || 0, 0);
       b.consumptionAlertPct = Math.min(Math.max(toNum($("#cfgAlert").value) || 15, 1), 90);
       b.currency = ($("#cfgCur").value || "$").trim() || "$";
+      b.fixedEfficiency = Math.max(toNum($("#cfgEff").value) || 0, 0); // Guardamos el rendimiento fijo
       commit(); alert("Datos guardados ✅"); break;
     }
     case "saveIntervals": {
@@ -149,10 +143,8 @@ document.addEventListener("submit", e => {
   }
 });
 
-// Escuchar cuando se guardan datos para volver a renderizar
 window.addEventListener('statechange', () => render());
 
-// Arranque
 (function init() {
   const loaded = loadState();
   Object.assign(STATE, loaded);

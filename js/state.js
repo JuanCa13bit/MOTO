@@ -29,6 +29,7 @@ export function newBike(name) {
   return {
     id: uid(), name: name || "Mi Moto", createdAt: new Date().toISOString(),
     odometer: 0, tankCapacity: 3, consumptionAlertPct: 15, currency: "$",
+    fixedEfficiency: 0, // Si es mayor a 0, ignora el promedio histórico
     config: JSON.parse(JSON.stringify(DEFAULT_CONFIG)),
     fuel: [], maintenance: [], docs: {}
   };
@@ -49,6 +50,7 @@ export function migrate(raw) {
     b.tankCapacity = Number(b.tankCapacity) || 3;
     b.consumptionAlertPct = isFinite(b.consumptionAlertPct) ? Number(b.consumptionAlertPct) : 15;
     b.currency = b.currency || "$";
+    b.fixedEfficiency = Number(b.fixedEfficiency) || 0; // Aseguramos que exista
     const cfg = {};
     for (const k of Object.keys(DEFAULT_CONFIG)) {
       cfg[k] = Object.assign({}, DEFAULT_CONFIG[k], (b.config && b.config[k]) || {});

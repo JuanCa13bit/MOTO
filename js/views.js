@@ -34,7 +34,6 @@ export function viewDash(b) {
   const autoLevel = autonomyLevel(b, st);
   const pendingMaint = getMaintRemaining(b).filter(s => s.level !== "green").slice(0, 3);
 
-  // Tarjetas de Próximos Mantenimientos (Siempre visible)
   const maintCards = pendingMaint.map(s => {
     let detalle = "";
     if (s.kmCheck && s.kmCheck.rem > 0) detalle = `En ${fmt0(s.kmCheck.rem)} km`;
@@ -52,7 +51,6 @@ export function viewDash(b) {
   }).join("") || `<div class="empty">🟢 Sin vencimientos próximos</div>`;
 
   return `
-  <!-- ODÓMETRO RÁPIDO -->
   <section class="card">
     <div class="card-h"><h2>Kilometraje actual</h2><span class="pill">${esc(b.name)}</span></div>
     <div class="inline">
@@ -61,7 +59,6 @@ export function viewDash(b) {
     </div>
   </section>
 
-  <!-- MEDIDOR DE GASOLINA GIGANTE -->
   <section class="card st-${autoLevel}" style="border-width:2px; border-color:var(--c,var(--bd))">
     <div class="card-h" style="margin-bottom:2px">
       <h2 style="color:var(--c,var(--tx))">${fuelInfo.icon} Combustible</h2>
@@ -72,13 +69,12 @@ export function viewDash(b) {
       <span>${fmt(st.remaining, 2)} gal estimados</span>
       <span>Capacidad: ${fmt(b.tankCapacity, 1)} gal</span>
     </div>
-    <!-- Barra de progreso visual -->
     <div style="width:100%; height:12px; background:var(--card2); border-radius:10px; margin-top:10px; overflow:hidden; border:1px solid var(--bd)">
       <div style="width:${Math.min(100, Math.max(0, fuelInfo.pct * 100))}%; height:100%; background:var(--c, var(--pr)); transition:width 0.3s ease"></div>
     </div>
+    ${b.fixedEfficiency > 0 ? `<p class="sm center" style="margin-top:6px;color:var(--ok)">Rendimiento fijo aplicado: ${b.fixedEfficiency} km/gal</p>` : ''}
   </section>
 
-  <!-- SEMÁFORO DE MANTENIMIENTO -->
   <section class="card">
     <div class="card-h">
       <h2>Próximos Vencimientos</h2>
@@ -87,7 +83,6 @@ export function viewDash(b) {
     ${maintCards}
   </section>
 
-  <!-- ACCIONES RÁPIDAS -->
   <section class="row2" style="margin-bottom:12px">
     <button class="btn primary" data-act="nav" data-view="fuel">⛽ Cargar gasolina</button>
     <button class="btn" data-act="openMaintPicker">🔧 Mantenimiento</button>
@@ -263,10 +258,13 @@ export function viewConfig(b) {
   <section class="card">
     <div class="card-h"><h2>Datos de la moto</h2></div>
     <label class="fld">Nombre<input type="text" id="cfgName" value="${esc(b.name)}"></label>
-    <div class="row3">
+    <div class="row2">
       <label class="fld">Tanque (gal)<input type="number" id="cfgTank" step="0.1" min="0" value="${b.tankCapacity}"></label>
       <label class="fld">Alerta consumo (%)<input type="number" id="cfgAlert" step="1" min="1" max="90" value="${b.consumptionAlertPct}"></label>
+    </div>
+    <div class="row2">
       <label class="fld">Moneda<input type="text" id="cfgCur" maxlength="3" value="${esc(b.currency)}"></label>
+      <label class="fld" title="Si pones un número aquí, la app ignorará el promedio histórico para calcular la autonomía.">Rendimiento Fijo (km/gal)<input type="number" id="cfgEff" step="0.1" min="0" placeholder="Ej: 35" value="${b.fixedEfficiency || ''}"></label>
     </div>
     <button class="btn primary" data-act="saveBikeCfg">Guardar datos</button>
   </section>
@@ -419,7 +417,6 @@ export function viewSummary(b) {
   </section>`;
 }
 
-// MODALES
 export function openModal(html) { const m = $("#modal"); m.innerHTML = `<div class="modal-card">${html}</div>`; m.classList.add("open"); }
 export function closeModal() { const m = $("#modal"); m.classList.remove("open"); m.innerHTML = ""; }
 

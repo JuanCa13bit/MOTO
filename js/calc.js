@@ -63,7 +63,14 @@ export function fuelStats(bike) {
   }
   const totalSegKm = segments.reduce((s, x) => s + x.km, 0);
   const totalSegGal = segments.reduce((s, x) => s + x.gallons, 0);
-  const avg = totalSegGal > 0 ? totalSegKm / totalSegGal : null;
+  
+  let avg = totalSegGal > 0 ? totalSegKm / totalSegGal : null;
+  
+  // SI EL USUARIO CONFIGURÓ UN RENDIMIENTO FIJO, LO USAMOS
+  if (bike.fixedEfficiency > 0) {
+    avg = bike.fixedEfficiency;
+  }
+
   const totalCost = fills.reduce((s, f) => s + (f.cost || 0), 0);
   const odoMin = fills.length ? Math.min(...fills.map(f => f.km)) : bike.odometer;
   const odoMax = fills.length ? Math.max(...fills.map(f => f.km)) : bike.odometer;
@@ -78,33 +85,30 @@ export function fuelStats(bike) {
   if (lastFull && avg && bike.tankCapacity > 0) {
     const distSince = Math.max(bike.odometer - lastFull.km, 0);
     const used = distSince / avg;
-    // Aquí sumamos TODAS las cargas parciales que hayas hecho desde el último tanque lleno
     const addedAfter = fills.filter(f => f.km > lastFull.km).reduce((s, f) => s + (f.gallons || 0), 0);
-    
-    // El tanque actual = Capacidad - lo usado + lo parcial que le echaste
     remaining = Math.max(0, Math.min(bike.tankCapacity, bike.tankCapacity - used + addedAfter));
     autonomy = remaining * avg;
   }
   
   const lastSeg = segments.length ? segments[segments.length - 1] : null;
-  const dropPct = (avg && lastSeg) ? ((avg - lastSeg.kmg) / avg) * 100 : 0;
+  const dropPct = (avg && lastSeg && bike.fixedEfficiency === 0) ? ((avg - lastSeg.kmg) / avg) * 100 : 0;
+  
   return { fills, fulls, segments, avg, totalCost, costPerKm, monthSpend, remaining, autonomy, lastSeg, dropPct, distTotal, gallonsTotal: fills.reduce((s, f) => s + (f.gallons || 0), 0) };
 }
 
 export function consumptionLevel(bike, st) {
-  if (!st.avg || !st.lastSeg) return "green";
+  if (!st.avg || !st.lastSeg || bike.fixedEfficiency > 0) return "green";
   return st.dropPct > (bike.consumptionAlertPct || 15) ? "red" : "green";
 }
 
 export function autonomyLevel(bike, st) {
   if (st.remaining === null || !bike.tankCapacity) return "green";
   const ratio = st.remaining / bike.tankCapacity;
-  if (ratio <= 0.10) return "red"; // 10% = reserva
-  if (ratio <= 0.25) return "yellow"; // 25% = 1/4
+  if (ratio <= 0.10) return "red";
+  if (ratio <= 0.25) return "yellow";
   return "green";
 }
 
-// NUEVO: Calcula el texto y el emoji del nivel de gasolina
 export function getFuelLevelInfo(st, capacity) {
   if (st.remaining === null || !capacity) return { text: "—", icon: "⛽", pct: 0 };
   const pct = st.remaining / capacity;
@@ -120,11 +124,9 @@ export function getFuelLevelInfo(st, capacity) {
   return { text, icon, pct };
 }
 
-// NUEVO: Saca los próximos mantenimientos ordenados por urgencia
 export function getMaintRemaining(bike) {
   const statuses = Object.keys(bike.config).map(k => computeStatus(bike, k));
   return statuses.sort((a, b) => {
-    // Ordenar por nivel (rojo > amarillo > verde)
     const rank = { red: 0, yellow: 1, green: 2 };
     return rank[a.level] - rank[b.level];
   });
