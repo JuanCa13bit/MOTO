@@ -1,6 +1,6 @@
 import { $, esc, fmt, fmt0, humanDate, todayISO, LEVEL_RANK } from './utils.js?v=11';
 import { STATE, activeBike, DOC_TYPES, syncOdometer } from './state.js?v=11';
-import { computeStatus, statusText, fuelStats, consumptionLevel, autonomyLevel, getFuelLevelInfo, getMaintRemaining } from './calc.js?v=11';
+import { computeStatus, statusText, fuelStats, autonomyLevel, getFuelLevelInfo, getMaintRemaining } from './calc.js?v=11';
 import { UI } from './ui.js?v=11';
 
 export function renderChart(segments) {
@@ -130,7 +130,7 @@ export function viewFuel(b) {
     ${renderChart([])}
     <div class="stats" style="margin-top:12px">
       <div class="stat"><div class="s-lbl">Promedio (últimas 5)</div><div class="s-val">${st.avg ? fmt(st.avg, 2) : "—"} <small>km/gal</small></div></div>
-      <div class="stat"><div class="s-lbl">Costo por km</div><div class="s-val">${st.costPerKm ? esc(b.currency) + fmt(st.costPerKm, 3) : "—"}</div></div>
+      <div class="stat"><div class="s-lbl">Costo total</div><div class="s-val">${esc(b.currency)}${fmt(st.totalCost, 2)}</div></div>
       <div class="stat"><div class="s-lbl">Gasto del mes</div><div class="s-val">${esc(b.currency)}${fmt(st.monthSpend, 2)}</div></div>
     </div>
   </section>
@@ -399,7 +399,7 @@ export function viewSummary(b) {
       <div class="stat"><div class="s-lbl">Costo combustible</div><div class="s-val">${esc(b.currency)}${fmt(st.totalCost, 2)}</div></div>
       <div class="stat"><div class="s-lbl">Costo mantenimiento</div><div class="s-val">${esc(b.currency)}${fmt(maintCost, 2)}</div></div>
       <div class="stat"><div class="s-lbl">Costo total de propiedad</div><div class="s-val">${esc(b.currency)}${fmt(totalOwnership, 2)}</div></div>
-      <div class="stat"><div class="s-lbl">Costo por km</div><div class="s-val">${st.costPerKm ? esc(b.currency) + fmt(st.costPerKm, 3) : "—"}</div></div>
+      <div class="stat"><div class="s-lbl">Costo por km</div><div class="s-val">—</div></div>
     </div>
   </section>
   <section class="card">
