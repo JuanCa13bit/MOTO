@@ -5,7 +5,6 @@ export function computeStatus(bike, key) {
   const records = bike.maintenance.filter(m => m.type === key).sort((a, b) => (a.km - b.km) || (a.date < b.date ? -1 : 1));
   const last = records.length ? records[records.length - 1] : null;
   const res = { key, cfg, last, checks: [] };
-
   if (cfg.km) {
     const base = last ? last.km : 0;
     const due = base + cfg.km;
@@ -54,7 +53,6 @@ export function fuelStats(bike) {
   const fills = [...bike.fuel].sort((a, b) => (a.km - b.km) || (a.date < b.date ? -1 : 1));
   const fulls = fills.filter(f => f.fullTank);
   
-  // Calcular promedio
   const segments = [];
   for (let i = 1; i < fulls.length; i++) {
     const a = fulls[i - 1], b = fulls[i];
@@ -67,11 +65,7 @@ export function fuelStats(bike) {
   const totalSegGal = segments.reduce((s, x) => s + x.gallons, 0);
   
   let avg = totalSegGal > 0 ? totalSegKm / totalSegGal : null;
-  
-  // Usar rendimiento fijo si el usuario lo configuró
-  if (bike.fixedEfficiency > 0) {
-    avg = bike.fixedEfficiency;
-  }
+  if (bike.fixedEfficiency > 0) avg = bike.fixedEfficiency;
 
   const totalCost = fills.reduce((s, f) => s + (f.cost || 0), 0);
   const odoMin = fills.length ? Math.min(...fills.map(f => f.km)) : bike.odometer;
@@ -82,24 +76,24 @@ export function fuelStats(bike) {
   const monthSpend = fills.filter(f => (f.date || "").startsWith(ym)).reduce((s, f) => s + (f.cost || 0), 0);
   
   let remaining = null, autonomy = null;
+  let calcDetails = null;
   const lastFull = fulls.length ? fulls[fulls.length - 1] : null;
   
   if (lastFull && avg && bike.tankCapacity > 0) {
-    // Distancia desde el último tanque lleno
     const distSince = Math.max(bike.odometer - lastFull.km, 0);
     const used = distSince / avg;
-    
-    // Galones cargados después de ese tanque lleno (parciales)
     const addedAfter = fills.filter(f => f.km > lastFull.km).reduce((s, f) => s + (f.gallons || 0), 0);
-    
     remaining = Math.max(0, Math.min(bike.tankCapacity, bike.tankCapacity - used + addedAfter));
     autonomy = remaining * avg;
+    calcDetails = {
+      lastFullKm: lastFull.km, lastFullDate: lastFull.date, odometer: bike.odometer,
+      distSince, avg, used, addedAfter, capacity: bike.tankCapacity
+    };
   }
   
   const lastSeg = segments.length ? segments[segments.length - 1] : null;
   const dropPct = (avg && lastSeg && bike.fixedEfficiency === 0) ? ((avg - lastSeg.kmg) / avg) * 100 : 0;
-  
-  return { fills, fulls, segments, avg, totalCost, costPerKm, monthSpend, remaining, autonomy, lastSeg, dropPct, distTotal, gallonsTotal: fills.reduce((s, f) => s + (f.gallons || 0), 0) };
+  return { fills, fulls, segments, avg, totalCost, costPerKm, monthSpend, remaining, autonomy, lastSeg, dropPct, distTotal, gallonsTotal: fills.reduce((s, f) => s + (f.gallons || 0), 0), calcDetails };
 }
 
 export function consumptionLevel(bike, st) {
@@ -119,14 +113,12 @@ export function getFuelLevelInfo(st, capacity) {
   if (st.remaining === null || !capacity) return { text: "—", icon: "⛽", pct: 0 };
   const pct = st.remaining / capacity;
   let text = "", icon = "";
-  
   if (pct <= 0.05) { text = "¡Vacío!"; icon = "🛑"; }
   else if (pct <= 0.20) { text = "Reserva"; icon = "⚠️"; }
   else if (pct <= 0.35) { text = "1/4 Tanque"; icon = "🔴"; }
   else if (pct <= 0.60) { text = "Mitad"; icon = "🟡"; }
   else if (pct <= 0.85) { text = "3/4 Tanque"; icon = "🟢"; }
   else { text = "Lleno"; icon = "🈵"; }
-  
   return { text, icon, pct };
 }
 

@@ -7,18 +7,15 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>MotoControl — Gasolina & Mantenimiento</title>
-<!-- ?v=3 para forzar actualización -->
-<link rel="stylesheet" href="css/style.css?v=3">
+<link rel="stylesheet" href="css/style.css?v=5">
 </head>
 <body>
-
 <header class="topbar">
   <select id="bikeSel" class="bikesel" aria-label="Seleccionar motocicleta"></select>
+  <span style="font-size:11px; color:var(--mu); font-weight:bold; margin-right:4px;">v5</span>
   <button class="iconbtn" data-act="toggleTheme" title="Cambiar tema">🌙</button>
 </header>
-
 <main id="app"></main>
-
 <nav class="tabbar" id="tabbar">
   <button data-act="nav" data-view="dash"><span class="ico">🏠</span>Inicio</button>
   <button data-act="nav" data-view="fuel"><span class="ico">⛽</span>Gasolina</button>
@@ -26,10 +23,7 @@
   <button data-act="nav" data-view="docs"><span class="ico">📄</span>Docs</button>
   <button data-act="nav" data-view="more"><span class="ico">⋯</span>Más</button>
 </nav>
-
 <div id="modal"></div>
-
-<!-- ?v=3 para forzar actualización -->
-<script type="module" src="js/main.js?v=3"></script>
+<script type="module" src="js/main.js?v=5"></script>
 </body>
 </html>
