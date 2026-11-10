@@ -1,7 +1,7 @@
-import { $, esc, fmt, fmt0, humanDate, todayISO, LEVEL_RANK } from './utils.js';
-import { STATE, activeBike, DOC_TYPES, syncOdometer } from './state.js';
-import { computeStatus, statusText, fuelStats, consumptionLevel, autonomyLevel, getFuelLevelInfo, getMaintRemaining } from './calc.js';
-import { UI } from './ui.js';
+import { $, esc, fmt, fmt0, humanDate, todayISO, LEVEL_RANK } from './utils.js?v=7';
+import { STATE, activeBike, DOC_TYPES, syncOdometer } from './state.js?v=7';
+import { computeStatus, statusText, fuelStats, consumptionLevel, autonomyLevel, getFuelLevelInfo, getMaintRemaining } from './calc.js?v=7';
+import { UI } from './ui.js?v=7';
 
 export function renderChart(segments) {
   if (segments.length < 2) return `<p class="mu sm">Necesitas al menos <b>2 llenados de tanque completo</b> para dibujar la curva.</p>`;
