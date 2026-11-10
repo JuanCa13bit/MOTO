@@ -1,4 +1,4 @@
-import { fmt, fmt0, addMonths, addDays, daysUntil, worst, todayISO } from './utils.js?v=10';
+import { fmt, fmt0, addMonths, addDays, daysUntil, worst, todayISO } from './utils.js?v=11';
 
 export function computeStatus(bike, key) {
   const cfg = bike.config[key] || {};
@@ -44,59 +44,83 @@ export function statusText(s) {
   }
   if (s.dateCheck) {
     const d = s.dateCheck.days;
-    parts.push(d < 0 ? `Vencido hace ${Math.abs(d)} d` : `Vence en ${d} d`);
+    parts.push(d < 0 ? `Vencido hace ${Math.abs(d)} días` : `Vence en ${d} días`);
   }
   return parts.join(" · ") || "Sin intervalo configurado";
 }
 
 export function fuelStats(bike) {
   const fills = [...bike.fuel].sort((a, b) => (a.km - b.km) || (a.date < b.date ? -1 : 1));
-  const fulls = fills.filter(f => f.fullTank);
-  const segments = [];
-  for (let i = 1; i < fulls.length; i++) {
-    const a = fulls[i - 1], b = fulls[i];
-    const between = fills.filter(f => f.km > a.km && f.km <= b.km);
-    const gallons = between.reduce((sum, f) => sum + (f.gallons || 0), 0);
-    const dist = b.km - a.km;
-    if (gallons > 0 && dist > 0) segments.push({ km: dist, gallons, kmg: dist / gallons, date: b.date, kmAt: b.km });
-  }
-  const totalSegKm = segments.reduce((s, x) => s + x.km, 0);
-  const totalSegGal = segments.reduce((s, x) => s + x.gallons, 0);
-  
-  let avg = totalSegGal > 0 ? totalSegKm / totalSegGal : null;
-  if (bike.fixedEfficiency > 0) avg = bike.fixedEfficiency;
+  if (fills.length === 0) return { avg: null, remaining: 0, autonomy: null, lastFill: null, kmSinceLast: 0, calcDetails: null };
 
+  // 1. CALCULAR RENDIMIENTO (Promedio de las últimas 5 recargas o rendimiento fijo)
+  let avg = bike.fixedEfficiency > 0 ? bike.fixedEfficiency : null;
+  
+  if (!avg) {
+    // Tomamos las últimas 5 recargas (ordenadas de más antigua a más nueva)
+    const recent = fills.slice(-5);
+    let totalKm = 0;
+    let totalGal = 0;
+    
+    for (let i = 1; i < recent.length; i++) {
+      const dist = recent[i].km - recent[i - 1].km;
+      // Si la distancia es positiva y los galones son lógicos (menores al tanque)
+      if (dist > 0 && recent[i].gallons > 0 && recent[i].gallons <= (bike.tankCapacity + 1)) {
+        totalKm += dist;
+        totalGal += recent[i].gallons;
+      }
+    }
+    if (totalGal > 0) avg = totalKm / totalGal;
+    else avg = 120; // Por defecto si no hay datos suficientes
+  }
+
+  // 2. ÚLTIMA RECARGA Y DISTANCIA ACTUAL
+  const lastFill = fills[fills.length - 1];
+  const kmSinceLast = Math.max(bike.odometer - lastFill.km, 0);
+
+  // 3. GASOLINA RESTANTE Y AUTONOMÍA
+  // Asumimos que lo que echaste en la última recarga es lo que tienes, menos lo que has gastado.
+  let remaining = 0;
+  let autonomy = 0;
+
+  if (lastFill.fullTank) {
+    // Si fue tanque lleno, partimos de la capacidad total
+    remaining = bike.tankCapacity - (kmSinceLast / avg);
+  } else {
+    // Si fue parcial, partimos de lo que echaste (asumiendo que estaba casi vacío, como dices)
+    remaining = lastFill.gallons - (kmSinceLast / avg);
+  }
+
+  // Si echaste gasolina DESPUÉS de la última recarga (no debería pasar, pero por si acaso)
+  const addedAfter = fills.filter(f => f.km > lastFill.km).reduce((s, f) => s + (f.gallons || 0), 0);
+  remaining += addedAfter;
+
+  remaining = Math.max(0, Math.min(bike.tankCapacity, remaining));
+  autonomy = remaining * avg;
+
+  // Datos extras para la interfaz
   const totalCost = fills.reduce((s, f) => s + (f.cost || 0), 0);
-  const odoMin = fills.length ? Math.min(...fills.map(f => f.km)) : bike.odometer;
-  const odoMax = fills.length ? Math.max(...fills.map(f => f.km)) : bike.odometer;
-  const distTotal = Math.max(odoMax - odoMin, 0);
-  const costPerKm = distTotal > 0 ? totalCost / distTotal : null;
   const ym = todayISO().slice(0, 7);
   const monthSpend = fills.filter(f => (f.date || "").startsWith(ym)).reduce((s, f) => s + (f.cost || 0), 0);
-  
-  let remaining = null, autonomy = null;
-  let calcDetails = null;
-  const lastFull = fulls.length ? fulls[fulls.length - 1] : null;
-  
-  if (lastFull && avg && bike.tankCapacity > 0) {
-    const distSince = Math.max(bike.odometer - lastFull.km, 0);
-    const used = distSince / avg;
-    const addedAfter = fills.filter(f => f.km > lastFull.km).reduce((s, f) => s + (f.gallons || 0), 0);
-    remaining = Math.max(0, Math.min(bike.tankCapacity, bike.tankCapacity - used + addedAfter));
-    autonomy = remaining * avg;
-    calcDetails = {
-      lastFullKm: lastFull.km, lastFullDate: lastFull.date, odometer: bike.odometer,
-      distSince, avg, used, addedAfter, capacity: bike.tankCapacity
-    };
-  }
-  const lastSeg = segments.length ? segments[segments.length - 1] : null;
-  const dropPct = (avg && lastSeg && bike.fixedEfficiency === 0) ? ((avg - lastSeg.kmg) / avg) * 100 : 0;
-  return { fills, fulls, segments, avg, totalCost, costPerKm, monthSpend, remaining, autonomy, lastSeg, dropPct, distTotal, gallonsTotal: fills.reduce((s, f) => s + (f.gallons || 0), 0), calcDetails };
+
+  const calcDetails = {
+    lastFillKm: lastFill.km,
+    lastFillDate: lastFill.date,
+    lastFillGal: lastFill.gallons,
+    isFullTank: lastFill.fullTank,
+    odometer: bike.odometer,
+    kmSinceLast,
+    avg,
+    usedSinceLast: kmSinceLast / avg,
+    remaining,
+    capacity: bike.tankCapacity
+  };
+
+  return { fills, avg, remaining, autonomy, lastFill, kmSinceLast, calcDetails, totalCost, monthSpend };
 }
 
 export function consumptionLevel(bike, st) {
-  if (!st.avg || !st.lastSeg || bike.fixedEfficiency > 0) return "green";
-  return st.dropPct > (bike.consumptionAlertPct || 15) ? "red" : "green";
+  return "green"; // Desactivado temporalmente para evitar falsas alarmas
 }
 
 export function autonomyLevel(bike, st) {
