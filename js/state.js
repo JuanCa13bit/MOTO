@@ -1,4 +1,4 @@
-import { uid, todayISO, parseDate } from './utils.js?v=8';
+import { uid, todayISO, parseDate } from './utils.js?v=9';
 
 export const STORAGE_KEY = "motocontrol.v1";
 export const DEFAULT_CONFIG = {

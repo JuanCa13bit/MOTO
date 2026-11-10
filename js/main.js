@@ -1,10 +1,10 @@
-import { $, $$, toNum, todayISO, fmt0, downloadFile, slug } from './utils.js?v=10';
-import { STATE, loadState, defaultState, saveState, activeBike, newBike, syncOdometer, commit } from './state.js?v=10';
-import { UI } from './ui.js?v=10';
-import { render } from './render.js?v=10';
-import * as views from './views.js?v=10';
-import * as imp from './import.js?v=10';
-import { fuelStats, autonomyLevel } from './calc.js?v=10';
+import { $, $$, toNum, todayISO, fmt0, downloadFile, slug } from './utils.js?v=9';
+import { STATE, loadState, defaultState, saveState, activeBike, newBike, syncOdometer, commit } from './state.js?v=9';
+import { UI } from './ui.js?v=9';
+import { render } from './render.js?v=9';
+import * as views from './views.js?v=9';
+import * as imp from './import.js?v=9';
+import { fuelStats, autonomyLevel } from './calc.js?v=9';
 
 document.addEventListener("click", e => {
   const el = e.target.closest("[data-act]");
@@ -17,6 +17,7 @@ document.addEventListener("click", e => {
     case "sub": UI.sub = el.dataset.sub === "null" ? null : el.dataset.sub; UI.importPreview = null; render(); break;
     case "toggleTheme": STATE.theme = STATE.theme === "light" ? "dark" : "light"; commit(); break;
     case "closeModal": views.closeModal(); break;
+    
     case "showCalc": views.modalCalc(b, fuelStats(b)); break;
     
     case "forceEfficiency": {

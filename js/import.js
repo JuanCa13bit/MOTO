@@ -1,7 +1,7 @@
-import { $, esc, parseNum, parseDate, todayISO, normKey, fmt0, uid } from './utils.js?v=8';
-import { STATE, activeBike, syncOdometer, commit, migrate } from './state.js?v=8';
-import { UI } from './ui.js?v=8';
-import { render } from './render.js?v=8';
+import { $, esc, parseNum, parseDate, todayISO, normKey, fmt0, uid } from './utils.js?v=9';
+import { STATE, activeBike, syncOdometer, commit, migrate } from './state.js?v=9';
+import { UI } from './ui.js?v=9';
+import { render } from './render.js?v=9';
 
 const HEADER_ALIASES = {
   type:      ["tipo", "categoria", "category", "registro", "clase"],
@@ -112,7 +112,14 @@ export function runConfirmImport() {
       const isMaint = !isFuel || typeStr.includes("mant") || typeStr.includes("aceite") || typeStr.includes("servicio");
 
       if (isFuel && !isMaint) {
-        const gallons = idx.gallons !== undefined ? parseNum(r[idx.gallons]) : NaN;
+        let gallonsRaw = idx.gallons !== undefined ? String(r[idx.gallons]).trim() : "";
+        // CORRECCIÓN: Si el número tiene punto y es menor a 10, forzamos a decimal
+        if (gallonsRaw.includes(".") && !gallonsRaw.includes(",")) {
+          const num = parseFloat(gallonsRaw);
+          if (num < 10) gallonsRaw = gallonsRaw.replace(/\./g, ",");
+        }
+        const gallons = gallonsRaw ? parseNum(gallonsRaw) : NaN;
+        
         const fullTank = idx.fullTank !== undefined ? boolFromCell(r[idx.fullTank]) : false;
         const dup = b.fuel.some(f => f.date === date && Math.round(f.km) === Math.round(km));
         if (dup) { skipped++; return; }
