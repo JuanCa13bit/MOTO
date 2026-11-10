@@ -1,7 +1,7 @@
-import { $, esc, fmt, fmt0, humanDate, todayISO, LEVEL_RANK } from './utils.js?v=8';
-import { STATE, activeBike, DOC_TYPES, syncOdometer } from './state.js?v=8';
-import { computeStatus, statusText, fuelStats, consumptionLevel, autonomyLevel, getFuelLevelInfo, getMaintRemaining } from './calc.js?v=8';
-import { UI } from './ui.js?v=8';
+import { $, esc, fmt, fmt0, humanDate, todayISO, LEVEL_RANK } from './utils.js?v=10';
+import { STATE, activeBike, DOC_TYPES, syncOdometer } from './state.js?v=10';
+import { computeStatus, statusText, fuelStats, consumptionLevel, autonomyLevel, getFuelLevelInfo, getMaintRemaining } from './calc.js?v=10';
+import { UI } from './ui.js?v=10';
 
 export function renderChart(segments) {
   if (segments.length < 2) return `<p class="mu sm">Necesitas al menos <b>2 llenados de tanque completo</b> para dibujar la curva.</p>`;
@@ -103,14 +103,26 @@ export function modalCalc(bike, st) {
     `);
   }
   const c = st.calcDetails;
+  
+  const isBadData = c.avg < 20; 
+  const badDataWarning = isBadData ? `
+    <div class="banner st-red" style="margin-bottom:12px">
+      <span class="b-ico">⚠️</span>
+      <div><b>¡Datos históricos inconsistentes!</b><br>
+      Tu promedio real es ~120 km/gal, pero la app calculó ${fmt(c.avg, 1)} km/gal porque hay un error en un registro viejo.</div>
+    </div>
+    <button class="btn primary" data-act="forceEfficiency" style="margin-bottom:12px; background:var(--warn); color:#000">🪄 Forzar rendimiento real a 120 km/gal</button>
+  ` : '';
+
   openModal(`
     <h3>🧮 El cálculo de la gasolina</h3>
     <p class="mu sm">Así es como la app estima cuánta gasolina te queda:</p>
+    ${badDataWarning}
     <div class="card tight" style="background:var(--card2)">
       <p class="sm"><b>1. Último tanque lleno:</b><br>${fmt0(c.lastFullKm)} km (${humanDate(c.lastFullDate)})</p>
       <p class="sm"><b>2. Odómetro actual:</b><br>${fmt0(c.odometer)} km</p>
       <p class="sm"><b>3. Distancia recorrida:</b><br>${fmt0(c.distSince)} km</p>
-      <p class="sm"><b>4. Rendimiento (promedio):</b><br>${fmt(c.avg, 1)} km/gal</p>
+      <p class="sm" style="${isBadData ? 'color:var(--bad);font-weight:bold' : ''}"><b>4. Rendimiento (promedio):</b><br>${fmt(c.avg, 1)} km/gal</p>
       <p class="sm"><b>5. Gasolina consumida:</b><br>${fmt0(c.distSince)} / ${fmt(c.avg, 1)} = <b>${fmt(c.used, 2)} gal</b></p>
       <p class="sm"><b>6. Recargas parciales:</b><br>Has echado <b>${fmt(c.addedAfter, 2)} gal</b> en recargas que no fueron tanque lleno.</p>
       <hr class="sep">
@@ -119,9 +131,8 @@ export function modalCalc(bike, st) {
       - Consumido (${fmt(c.used, 2)}) <br>
       + Recargado (${fmt(c.addedAfter, 2)}) <br>
       = <b>${fmt(c.capacity - c.used + c.addedAfter, 2)} gal</b></p>
-      <p class="sm mu" style="margin-top:8px">(Si el resultado es negativo, la app muestra 0, porque significa que según los datos, ya te habrías quedado sin gasolina).</p>
     </div>
-    <button class="btn primary" data-act="closeModal" style="margin-top:12px">Entendido</button>
+    <button class="btn ghost" data-act="closeModal" style="margin-top:12px">Cerrar</button>
   `);
 }
 
@@ -130,7 +141,7 @@ export function viewFuel(b) {
   const list = [...b.fuel].sort((a, c) => (c.km - a.km) || (c.date < a.date ? -1 : 1));
   const rows = list.length ? list.map(f => `
     <div class="rec">
-      <div class="rec-ico">${f.fullTank ? "🈵" : "⛽"}</div>
+      <div class="rec-ico">${f.fullTank ? "🟢" : "🟡"}</div>
       <div class="rec-main">
         <div class="rec-t">${fmt0(f.km)} km · ${fmt(f.gallons, 2)} gal</div>
         <div class="rec-s">${humanDate(f.date)} · ${f.fullTank ? "Tanque lleno" : "Parcial"}${f.notes ? " · " + esc(f.notes) : ""}</div>
@@ -159,7 +170,6 @@ export function viewFuel(b) {
     <div class="stats" style="margin-top:12px">
       <div class="stat"><div class="s-lbl">Promedio histórico</div><div class="s-val">${st.avg ? fmt(st.avg, 2) : "—"} <small>km/gal</small></div></div>
       <div class="stat"><div class="s-lbl">Último tanque</div><div class="s-val">${st.lastSeg ? fmt(st.lastSeg.kmg, 2) : "—"} <small>km/gal</small></div></div>
-      <div class="stat"><div class="s-lbl">Costo por km</div><div class="s-val">${st.costPerKm ? esc(b.currency) + fmt(st.costPerKm, 3) : "—"}</div></div>
       <div class="stat"><div class="s-lbl">Gasto del mes</div><div class="s-val">${esc(b.currency)}${fmt(st.monthSpend, 2)}</div></div>
     </div>
   </section>
@@ -288,7 +298,7 @@ export function viewConfig(b) {
     </div>
     <div class="row2">
       <label class="fld">Moneda<input type="text" id="cfgCur" maxlength="3" value="${esc(b.currency)}"></label>
-      <label class="fld" title="Si pones un número aquí, la app ignorará el promedio histórico para calcular la autonomía.">Rendimiento Fijo (km/gal)<input type="number" id="cfgEff" step="1" min="0" placeholder="Ej: 120" value="${b.fixedEfficiency || ''}"></label>
+      <label class="fld" title="Si pones un número aquí, la app ignorará el promedio histórico.">Rendimiento Fijo (km/gal)<input type="number" id="cfgEff" step="1" min="0" placeholder="Ej: 120" value="${b.fixedEfficiency || ''}"></label>
     </div>
     <button class="btn primary" data-act="saveBikeCfg">Guardar datos</button>
   </section>
@@ -359,13 +369,13 @@ export function viewBackup(b) {
         <div style="font-size:10px;color:var(--mu);margin-bottom:4px">${esc(h || "Col " + (i + 1))}</div>
         <select data-map="${i}" style="min-height:38px;padding:4px 6px;font-size:12px;margin:0">
           <option value=""        ${!p.mapping[i] ? "selected" : ""}>— ignorar —</option>
-          <option value="type"    ${p.mapping[i] === "type" ? "selected" : ""}>Tipo (Gasolina/Manto)</option>
+          <option value="type"    ${p.mapping[i] === "type" ? "selected" : ""}>Tipo</option>
           <option value="date"    ${p.mapping[i] === "date" ? "selected" : ""}>Fecha</option>
           <option value="km"      ${p.mapping[i] === "km" ? "selected" : ""}>Km</option>
           <option value="gallons" ${p.mapping[i] === "gallons" ? "selected" : ""}>Galones</option>
           <option value="cost"    ${p.mapping[i] === "cost" ? "selected" : ""}>Costo</option>
           <option value="fullTank"${p.mapping[i] === "fullTank" ? "selected" : ""}>Tanque lleno</option>
-          <option value="maintType"${p.mapping[i] === "maintType" ? "selected" : ""}>Servicio (Aceite/Frenos...)</option>
+          <option value="maintType"${p.mapping[i] === "maintType" ? "selected" : ""}>Servicio</option>
           <option value="notes"   ${p.mapping[i] === "notes" ? "selected" : ""}>Notas</option>
         </select>
       </th>`).join("");
@@ -373,7 +383,7 @@ export function viewBackup(b) {
     previewHTML = `
     <section class="card">
       <div class="card-h"><h2>Vista previa</h2><span class="pill">${p.rows.length} filas</span></div>
-      <p class="mu sm">Verifica el auto-mapeo. Puedes corregirlo.</p>
+      <p class="mu sm">Verifica el auto-mapeo.</p>
       <div class="scroll-x"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody>${rows}</tbody></table></div>
       <div class="row2" style="margin-top:14px">
         <button class="btn ghost" data-act="cancelImport">Cancelar</button>
@@ -385,20 +395,18 @@ export function viewBackup(b) {
   <div class="no-print" style="margin-bottom:12px"><button class="btn ghost sm" data-act="sub" data-sub="null">← Volver</button></div>
   <section class="card">
     <div class="card-h"><h2>Exportar respaldo</h2></div>
-    <p class="mu sm">Descarga una copia de seguridad completa o el historial de la moto activa.</p>
     <div class="row2"><button class="btn" data-act="exportJSON">JSON (todo)</button><button class="btn" data-act="exportCSV">CSV (moto)</button></div>
   </section>
   <section class="card">
     <div class="card-h"><h2>Pasar mi historial</h2></div>
     <p class="mu sm">Pega desde <b>Excel / Google Sheets</b> o sube un CSV.</p>
-    <label class="fld">Pegar datos<textarea id="importText" placeholder="tipo,fecha,km,galones,costo,lleno,servicio,notas&#10;gasolina,2024-03-01,5200,2.5,12.50,si,,"></textarea></label>
+    <label class="fld">Pegar datos<textarea id="importText" placeholder="tipo,fecha,km,galones,costo,lleno,servicio,notas..."></textarea></label>
     <label class="fld">…o subir archivo<input type="file" id="importFile" accept=".csv,.txt,.json"></label>
     <button class="btn primary" data-act="analyzeImport">Analizar</button>
   </section>
   ${previewHTML}
   <section class="card">
     <div class="card-h"><h2>Importar respaldo JSON</h2></div>
-    <p class="mu sm">Pega el contenido de un respaldo JSON completo.</p>
     <label class="fld">Respaldo JSON<textarea id="restoreText" placeholder='{"version":1,"bikes":[...]}'></textarea></label>
     <button class="btn danger" data-act="restoreJSON">Restaurar respaldo</button>
   </section>`;
@@ -413,7 +421,7 @@ export function viewSummary(b) {
     const cfg = b.config[r.type] || {};
     return `<tr><td>${humanDate(r.date)}</td><td>${fmt0(r.km)} km</td><td>${cfg.icon || ""} ${esc(cfg.label || r.type)}</td><td style="text-align:right">${r.cost ? esc(b.currency) + fmt(r.cost, 2) : "—"}</td><td>${esc(r.notes || "")}</td></tr>`;
   }).join("");
-  const fuelRows = [...b.fuel].sort((a, c) => (a.date < c.date ? -1 : 1)).map(f => `<tr><td>${humanDate(f.date)}</td><td>${fmt0(f.km)} km</td><td>${fmt(f.gallons, 2)} gal ${f.fullTank ? "🈵" : ""}</td><td style="text-align:right">${esc(b.currency)}${fmt(f.cost, 2)}</td></tr>`).join("");
+  const fuelRows = [...b.fuel].sort((a, c) => (a.date < c.date ? -1 : 1)).map(f => `<tr><td>${humanDate(f.date)}</td><td>${fmt0(f.km)} km</td><td>${fmt(f.gallons, 2)} gal ${f.fullTank ? "🟢" : ""}</td><td style="text-align:right">${esc(b.currency)}${fmt(f.cost, 2)}</td></tr>`).join("");
   return `
   <div class="no-print" style="margin-bottom:12px;display:flex;gap:8px">
     <button class="btn ghost sm" data-act="sub" data-sub="null">← Volver</button>
@@ -428,7 +436,6 @@ export function viewSummary(b) {
       <div class="stat"><div class="s-lbl">Costo combustible</div><div class="s-val">${esc(b.currency)}${fmt(st.totalCost, 2)}</div></div>
       <div class="stat"><div class="s-lbl">Costo mantenimiento</div><div class="s-val">${esc(b.currency)}${fmt(maintCost, 2)}</div></div>
       <div class="stat"><div class="s-lbl">Costo total de propiedad</div><div class="s-val">${esc(b.currency)}${fmt(totalOwnership, 2)}</div></div>
-      <div class="stat"><div class="s-lbl">Costo por km</div><div class="s-val">${st.costPerKm ? esc(b.currency) + fmt(st.costPerKm, 3) : "—"}</div></div>
     </div>
   </section>
   <section class="card">

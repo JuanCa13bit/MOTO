@@ -1,10 +1,10 @@
-import { $, $$, toNum, todayISO, fmt0, downloadFile, slug } from './utils.js?v=8';
-import { STATE, loadState, defaultState, saveState, activeBike, newBike, syncOdometer, commit } from './state.js?v=8';
-import { UI } from './ui.js?v=8';
-import { render } from './render.js?v=8';
-import * as views from './views.js?v=8';
-import * as imp from './import.js?v=8';
-import { fuelStats, autonomyLevel } from './calc.js?v=8';
+import { $, $$, toNum, todayISO, fmt0, downloadFile, slug } from './utils.js?v=10';
+import { STATE, loadState, defaultState, saveState, activeBike, newBike, syncOdometer, commit } from './state.js?v=10';
+import { UI } from './ui.js?v=10';
+import { render } from './render.js?v=10';
+import * as views from './views.js?v=10';
+import * as imp from './import.js?v=10';
+import { fuelStats, autonomyLevel } from './calc.js?v=10';
 
 document.addEventListener("click", e => {
   const el = e.target.closest("[data-act]");
@@ -18,6 +18,15 @@ document.addEventListener("click", e => {
     case "toggleTheme": STATE.theme = STATE.theme === "light" ? "dark" : "light"; commit(); break;
     case "closeModal": views.closeModal(); break;
     case "showCalc": views.modalCalc(b, fuelStats(b)); break;
+    
+    case "forceEfficiency": {
+      b.fixedEfficiency = 120;
+      views.closeModal();
+      commit();
+      alert("¡Listo! A partir de ahora la app usará 120 km/galón fijos y la barra de gasolina se arreglará.");
+      break;
+    }
+
     case "saveOdo": { 
       const v = toNum($("#odoInput").value); 
       if (!isFinite(v) || v < 0) return alert("Ingresa un kilometraje válido."); 

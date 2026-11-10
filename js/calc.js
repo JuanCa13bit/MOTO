@@ -1,4 +1,4 @@
-import { fmt, fmt0, addMonths, addDays, daysUntil, worst, todayISO } from './utils.js?v=8';
+import { fmt, fmt0, addMonths, addDays, daysUntil, worst, todayISO } from './utils.js?v=10';
 
 export function computeStatus(bike, key) {
   const cfg = bike.config[key] || {};
@@ -50,9 +50,13 @@ export function statusText(s) {
 }
 
 export function fuelStats(bike) {
-  const fills = [...bike.fuel].sort((a, b) => (a.km - b.km) || (a.date < b.date ? -1 : 1));
+  // FILTRO DE SEGURIDAD: Ignorar registros con 0 km o 0 galones
+  const validFills = bike.fuel.filter(f => f.km > 0 && f.gallons > 0);
+  
+  const fills = [...validFills].sort((a, b) => (a.km - b.km) || (a.date < b.date ? -1 : 1));
   const fulls = fills.filter(f => f.fullTank);
   const segments = [];
+  
   for (let i = 1; i < fulls.length; i++) {
     const a = fulls[i - 1], b = fulls[i];
     const between = fills.filter(f => f.km > a.km && f.km <= b.km);
@@ -60,19 +64,16 @@ export function fuelStats(bike) {
     const dist = b.km - a.km;
     if (gallons > 0 && dist > 0) segments.push({ km: dist, gallons, kmg: dist / gallons, date: b.date, kmAt: b.km });
   }
+  
   const totalSegKm = segments.reduce((s, x) => s + x.km, 0);
   const totalSegGal = segments.reduce((s, x) => s + x.gallons, 0);
   
   let avg = totalSegGal > 0 ? totalSegKm / totalSegGal : null;
   if (bike.fixedEfficiency > 0) avg = bike.fixedEfficiency;
 
-  const totalCost = fills.reduce((s, f) => s + (f.cost || 0), 0);
-  const odoMin = fills.length ? Math.min(...fills.map(f => f.km)) : bike.odometer;
-  const odoMax = fills.length ? Math.max(...fills.map(f => f.km)) : bike.odometer;
-  const distTotal = Math.max(odoMax - odoMin, 0);
-  const costPerKm = distTotal > 0 ? totalCost / distTotal : null;
+  const totalCost = bike.fuel.reduce((s, f) => s + (f.cost || 0), 0);
   const ym = todayISO().slice(0, 7);
-  const monthSpend = fills.filter(f => (f.date || "").startsWith(ym)).reduce((s, f) => s + (f.cost || 0), 0);
+  const monthSpend = bike.fuel.filter(f => (f.date || "").startsWith(ym)).reduce((s, f) => s + (f.cost || 0), 0);
   
   let remaining = null, autonomy = null;
   let calcDetails = null;
@@ -81,7 +82,7 @@ export function fuelStats(bike) {
   if (lastFull && avg && bike.tankCapacity > 0) {
     const distSince = Math.max(bike.odometer - lastFull.km, 0);
     const used = distSince / avg;
-    const addedAfter = fills.filter(f => f.km > lastFull.km).reduce((s, f) => s + (f.gallons || 0), 0);
+    const addedAfter = bike.fuel.filter(f => f.km > lastFull.km && f.gallons > 0).reduce((s, f) => s + (f.gallons || 0), 0);
     remaining = Math.max(0, Math.min(bike.tankCapacity, bike.tankCapacity - used + addedAfter));
     autonomy = remaining * avg;
     calcDetails = {
@@ -91,7 +92,7 @@ export function fuelStats(bike) {
   }
   const lastSeg = segments.length ? segments[segments.length - 1] : null;
   const dropPct = (avg && lastSeg && bike.fixedEfficiency === 0) ? ((avg - lastSeg.kmg) / avg) * 100 : 0;
-  return { fills, fulls, segments, avg, totalCost, costPerKm, monthSpend, remaining, autonomy, lastSeg, dropPct, distTotal, gallonsTotal: fills.reduce((s, f) => s + (f.gallons || 0), 0), calcDetails };
+  return { fills, fulls, segments, avg, totalCost, monthSpend, remaining, autonomy, lastSeg, dropPct, calcDetails };
 }
 
 export function consumptionLevel(bike, st) {
@@ -111,12 +112,12 @@ export function getFuelLevelInfo(st, capacity) {
   if (st.remaining === null || !capacity) return { text: "—", icon: "⛽", pct: 0 };
   const pct = st.remaining / capacity;
   let text = "", icon = "";
-  if (pct <= 0.05) { text = "¡Vacío!"; icon = "🛑"; }
+  if (pct <= 0.05) { text = "¡Vacío!"; icon = "🚨"; }
   else if (pct <= 0.20) { text = "Reserva"; icon = "⚠️"; }
   else if (pct <= 0.35) { text = "1/4 Tanque"; icon = "🔴"; }
   else if (pct <= 0.60) { text = "Mitad"; icon = "🟡"; }
   else if (pct <= 0.85) { text = "3/4 Tanque"; icon = "🟢"; }
-  else { text = "Lleno"; icon = "🈵"; }
+  else { text = "Lleno"; icon = "🟢"; }
   return { text, icon, pct };
 }
 
