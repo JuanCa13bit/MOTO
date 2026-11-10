@@ -53,6 +53,8 @@ export function statusText(s) {
 export function fuelStats(bike) {
   const fills = [...bike.fuel].sort((a, b) => (a.km - b.km) || (a.date < b.date ? -1 : 1));
   const fulls = fills.filter(f => f.fullTank);
+  
+  // Calcular promedio
   const segments = [];
   for (let i = 1; i < fulls.length; i++) {
     const a = fulls[i - 1], b = fulls[i];
@@ -66,7 +68,7 @@ export function fuelStats(bike) {
   
   let avg = totalSegGal > 0 ? totalSegKm / totalSegGal : null;
   
-  // SI EL USUARIO CONFIGURÓ UN RENDIMIENTO FIJO, LO USAMOS
+  // Usar rendimiento fijo si el usuario lo configuró
   if (bike.fixedEfficiency > 0) {
     avg = bike.fixedEfficiency;
   }
@@ -83,9 +85,13 @@ export function fuelStats(bike) {
   const lastFull = fulls.length ? fulls[fulls.length - 1] : null;
   
   if (lastFull && avg && bike.tankCapacity > 0) {
+    // Distancia desde el último tanque lleno
     const distSince = Math.max(bike.odometer - lastFull.km, 0);
     const used = distSince / avg;
+    
+    // Galones cargados después de ese tanque lleno (parciales)
     const addedAfter = fills.filter(f => f.km > lastFull.km).reduce((s, f) => s + (f.gallons || 0), 0);
+    
     remaining = Math.max(0, Math.min(bike.tankCapacity, bike.tankCapacity - used + addedAfter));
     autonomy = remaining * avg;
   }
