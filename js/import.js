@@ -1,7 +1,7 @@
-import { $, esc, parseNum, parseDate, todayISO, normKey, fmt0, uid } from './utils.js?v=9';
-import { STATE, activeBike, syncOdometer, commit, migrate } from './state.js?v=9';
-import { UI } from './ui.js?v=9';
-import { render } from './render.js?v=9';
+import { $, esc, parseNum, parseDate, todayISO, normKey, fmt0, uid } from './utils.js?v=10';
+import { STATE, activeBike, syncOdometer, commit, migrate } from './state.js?v=10';
+import { UI } from './ui.js?v=10';
+import { render } from './render.js?v=10';
 
 const HEADER_ALIASES = {
   type:      ["tipo", "categoria", "category", "registro", "clase"],
@@ -98,13 +98,14 @@ export function runConfirmImport() {
 
     let addedFuel = 0, addedMaint = 0, skipped = 0, invalid = 0;
     let maxKm = b.odometer;
+    let ignoredLargeGallons = 0;
 
     p.rows.forEach(r => {
       const km = parseNum(r[idx.km]);
-      if (!isFinite(km) || km < 0) { invalid++; return; }
+      if (km <= 0) { invalid++; return; }
       
       const date = idx.date !== undefined ? (parseDate(r[idx.date]) || todayISO()) : todayISO();
-      const cost = idx.cost !== undefined ? parseNum(r[idx.cost]) : NaN;
+      const cost = idx.cost !== undefined ? parseNum(r[idx.cost]) : 0;
       const notes = idx.notes !== undefined ? String(r[idx.notes] || "").trim() : "";
       const typeStr = idx.type !== undefined ? String(r[idx.type]).toLowerCase() : "";
       
@@ -112,18 +113,18 @@ export function runConfirmImport() {
       const isMaint = !isFuel || typeStr.includes("mant") || typeStr.includes("aceite") || typeStr.includes("servicio");
 
       if (isFuel && !isMaint) {
-        let gallonsRaw = idx.gallons !== undefined ? String(r[idx.gallons]).trim() : "";
-        // CORRECCIÓN: Si el número tiene punto y es menor a 10, forzamos a decimal
-        if (gallonsRaw.includes(".") && !gallonsRaw.includes(",")) {
-          const num = parseFloat(gallonsRaw);
-          if (num < 10) gallonsRaw = gallonsRaw.replace(/\./g, ",");
-        }
-        const gallons = gallonsRaw ? parseNum(gallonsRaw) : NaN;
+        const gallons = idx.gallons !== undefined ? parseNum(r[idx.gallons]) : 0;
         
+        // FILTRO DE SEGURIDAD: Si los galones superan la capacidad del tanque (ej. 2382), lo ignoramos.
+        if (gallons > (b.tankCapacity + 2)) {
+          ignoredLargeGallons++;
+          return; // Ignorar este registro absurdo
+        }
+
         const fullTank = idx.fullTank !== undefined ? boolFromCell(r[idx.fullTank]) : false;
         const dup = b.fuel.some(f => f.date === date && Math.round(f.km) === Math.round(km));
         if (dup) { skipped++; return; }
-        b.fuel.push({ id: uid(), date, km, gallons: isFinite(gallons) && gallons > 0 ? gallons : 0, cost: isFinite(cost) && cost >= 0 ? cost : 0, fullTank, notes });
+        b.fuel.push({ id: uid(), date, km, gallons: gallons > 0 ? gallons : 0, cost: cost >= 0 ? cost : 0, fullTank, notes });
         addedFuel++;
       } else {
         let mTypeRaw = idx.maintType !== undefined ? String(r[idx.maintType]).toLowerCase() : "general";
@@ -139,7 +140,7 @@ export function runConfirmImport() {
         
         const dup = b.maintenance.some(m => m.date === date && Math.round(m.km) === Math.round(km) && m.type === mType);
         if (dup) { skipped++; return; }
-        b.maintenance.push({ id: uid(), type: mType, date, km, cost: isFinite(cost) && cost >= 0 ? cost : 0, notes });
+        b.maintenance.push({ id: uid(), type: mType, date, km, cost: cost >= 0 ? cost : 0, notes });
         addedMaint++;
       }
       if (km > maxKm) maxKm = km;
@@ -150,7 +151,11 @@ export function runConfirmImport() {
     UI.importPreview = null;
     commit();
 
-    alert(`Importación completada ✅\n\n• Gasolina agregada: ${addedFuel}\n• Mantenimientos agregados: ${addedMaint}\n• Duplicados omitidos: ${skipped}\n• Filas inválidas: ${invalid}\n• Odómetro actualizado a: ${fmt0(b.odometer)} km`);
+    let msg = `Importación completada ✅\n\n• Gasolina agregada: ${addedFuel}\n• Mantenimientos agregados: ${addedMaint}\n• Duplicados omitidos: ${skipped}\n• Filas inválidas: ${invalid}\n• Odómetro actualizado a: ${fmt0(b.odometer)} km`;
+    if (ignoredLargeGallons > 0) {
+      msg += `\n\n⚠️ SE IGNORARON ${ignoredLargeGallons} registros de gasolina porque tenían más galones que la capacidad de tu tanque (error de punto decimal).`;
+    }
+    alert(msg);
   } catch (err) {
     alert("Error al importar: " + err.message);
     console.error(err);

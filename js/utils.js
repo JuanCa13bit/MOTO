@@ -5,7 +5,7 @@ export const uid = () => Date.now().toString(36) + Math.random().toString(36).sl
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
 export const pad2 = n => String(n).padStart(2, "0");
 export const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; };
-export const toNum = v => { const n = typeof v === "number" ? v : parseFloat(String(v).replace(",", ".")); return isFinite(n) ? n : NaN; };
+export const toNum = v => { const n = typeof v === "number" ? v : parseFloat(String(v).replace(",", ".")); return isFinite(n) ? n : 0; };
 export const fmt = (n, d = 2) => (n === null || n === undefined || !isFinite(n)) ? "—" : Number(n).toLocaleString("es-ES", { minimumFractionDigits:d, maximumFractionDigits:d });
 export const fmt0 = n => fmt(n, 0);
 export const addMonths = (dateLike, m) => { const x = new Date(dateLike); const day = x.getDate(); x.setMonth(x.getMonth() + m); if (x.getDate() < day) x.setDate(0); return x; };
@@ -15,10 +15,12 @@ export const humanDate = iso => { if (!iso) return "—"; const d = new Date(iso
 export const worst = (a, b) => (LEVEL_RANK[a] >= LEVEL_RANK[b] ? a : b);
 
 export function parseNum(v) {
-  if (v === null || v === undefined || v === "") return NaN;
-  if (typeof v === "number") return isFinite(v) ? v : NaN;
+  if (v === null || v === undefined || v === "") return 0; // Vacíos son 0
+  if (typeof v === "number") return isFinite(v) ? v : 0;
+  
   let s = String(v).trim().replace(/[^\d.,-]/g, "");
-  if (!s) return NaN;
+  if (!s || s === "-") return 0;
+  
   const lc = s.lastIndexOf(","), ld = s.lastIndexOf(".");
   if (lc > -1 && ld > -1) {
     if (lc > ld) s = s.replace(/\./g, "").replace(",", ".");
@@ -28,10 +30,15 @@ export function parseNum(v) {
     if (parts.length === 2 && parts[1].length !== 3) s = s.replace(",", ".");
     else s = s.replace(/,/g, "");
   } else if (ld > -1) {
-    if (/^-?\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, "");
+    const parts = s.split(".");
+    // Si el número es menor a 10 (ej. 2.382) o es 0.xxx, es un decimal.
+    // Si es mayor a 10 (ej. 1.500) y tiene 3 decimales, es separador de miles.
+    if (parts[0].length > 2 && parts[1].length === 3) {
+      s = s.replace(/\./g, "");
+    }
   }
   const n = parseFloat(s);
-  return isFinite(n) ? n : NaN;
+  return isFinite(n) ? n : 0;
 }
 
 export function parseDate(v) {

@@ -1,4 +1,4 @@
-import { fmt, fmt0, addMonths, addDays, daysUntil, worst, todayISO } from './utils.js?v=9';
+import { fmt, fmt0, addMonths, addDays, daysUntil, worst, todayISO } from './utils.js?v=10';
 
 export function computeStatus(bike, key) {
   const cfg = bike.config[key] || {};
