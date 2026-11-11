@@ -1,4 +1,4 @@
-import { fmt, fmt0, addMonths, addDays, daysUntil, worst, todayISO } from './utils.js?v=11';
+import { fmt, fmt0, addMonths, addDays, daysUntil, worst, todayISO } from './utils.js?v=13';
 
 export function computeStatus(bike, key) {
   const cfg = bike.config[key] || {};
@@ -44,83 +44,52 @@ export function statusText(s) {
   }
   if (s.dateCheck) {
     const d = s.dateCheck.days;
-    parts.push(d < 0 ? `Vencido hace ${Math.abs(d)} días` : `Vence en ${d} días`);
+    parts.push(d < 0 ? `Vencido hace ${Math.abs(d)} d` : `Vence en ${d} d`);
   }
   return parts.join(" · ") || "Sin intervalo configurado";
 }
 
 export function fuelStats(bike) {
   const fills = [...bike.fuel].sort((a, b) => (a.km - b.km) || (a.date < b.date ? -1 : 1));
-  if (fills.length === 0) return { avg: null, remaining: 0, autonomy: null, lastFill: null, kmSinceLast: 0, calcDetails: null };
+  if (fills.length === 0) return { avg: null, remaining: 0, autonomy: null, lastFill: null, kmSinceLast: 0, calcDetails: null, totalCost: 0, monthSpend: 0 };
 
-  // 1. CALCULAR RENDIMIENTO (Promedio de las últimas 5 recargas o rendimiento fijo)
   let avg = bike.fixedEfficiency > 0 ? bike.fixedEfficiency : null;
-  
   if (!avg) {
-    // Tomamos las últimas 5 recargas (ordenadas de más antigua a más nueva)
     const recent = fills.slice(-5);
-    let totalKm = 0;
-    let totalGal = 0;
-    
+    let totalKm = 0, totalGal = 0;
     for (let i = 1; i < recent.length; i++) {
       const dist = recent[i].km - recent[i - 1].km;
-      // Si la distancia es positiva y los galones son lógicos (menores al tanque)
       if (dist > 0 && recent[i].gallons > 0 && recent[i].gallons <= (bike.tankCapacity + 1)) {
         totalKm += dist;
         totalGal += recent[i].gallons;
       }
     }
     if (totalGal > 0) avg = totalKm / totalGal;
-    else avg = 120; // Por defecto si no hay datos suficientes
+    else avg = 120;
   }
 
-  // 2. ÚLTIMA RECARGA Y DISTANCIA ACTUAL
   const lastFill = fills[fills.length - 1];
   const kmSinceLast = Math.max(bike.odometer - lastFill.km, 0);
 
-  // 3. GASOLINA RESTANTE Y AUTONOMÍA
-  // Asumimos que lo que echaste en la última recarga es lo que tienes, menos lo que has gastado.
   let remaining = 0;
-  let autonomy = 0;
+  if (lastFill.fullTank) remaining = bike.tankCapacity - (kmSinceLast / avg);
+  else remaining = lastFill.gallons - (kmSinceLast / avg);
 
-  if (lastFill.fullTank) {
-    // Si fue tanque lleno, partimos de la capacidad total
-    remaining = bike.tankCapacity - (kmSinceLast / avg);
-  } else {
-    // Si fue parcial, partimos de lo que echaste (asumiendo que estaba casi vacío, como dices)
-    remaining = lastFill.gallons - (kmSinceLast / avg);
-  }
-
-  // Si echaste gasolina DESPUÉS de la última recarga (no debería pasar, pero por si acaso)
   const addedAfter = fills.filter(f => f.km > lastFill.km).reduce((s, f) => s + (f.gallons || 0), 0);
   remaining += addedAfter;
 
   remaining = Math.max(0, Math.min(bike.tankCapacity, remaining));
-  autonomy = remaining * avg;
-
-  // Datos extras para la interfaz
+  const autonomy = remaining * avg;
   const totalCost = fills.reduce((s, f) => s + (f.cost || 0), 0);
   const ym = todayISO().slice(0, 7);
   const monthSpend = fills.filter(f => (f.date || "").startsWith(ym)).reduce((s, f) => s + (f.cost || 0), 0);
 
   const calcDetails = {
-    lastFillKm: lastFill.km,
-    lastFillDate: lastFill.date,
-    lastFillGal: lastFill.gallons,
-    isFullTank: lastFill.fullTank,
-    odometer: bike.odometer,
-    kmSinceLast,
-    avg,
-    usedSinceLast: kmSinceLast / avg,
-    remaining,
-    capacity: bike.tankCapacity
+    lastFillKm: lastFill.km, lastFillDate: lastFill.date, lastFillGal: lastFill.gallons, isFullTank: lastFill.fullTank,
+    odometer: bike.odometer, kmSinceLast, avg, usedSinceLast: kmSinceLast / avg, remaining, capacity: bike.tankCapacity
   };
 
   return { fills, avg, remaining, autonomy, lastFill, kmSinceLast, calcDetails, totalCost, monthSpend };
-}
-
-export function consumptionLevel(bike, st) {
-  return "green"; // Desactivado temporalmente para evitar falsas alarmas
 }
 
 export function autonomyLevel(bike, st) {

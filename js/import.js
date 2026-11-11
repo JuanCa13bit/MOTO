@@ -1,7 +1,7 @@
-import { $, esc, parseNum, parseDate, todayISO, normKey, fmt0, uid } from './utils.js?v=10';
-import { STATE, activeBike, syncOdometer, commit, migrate } from './state.js?v=10';
-import { UI } from './ui.js?v=10';
-import { render } from './render.js?v=10';
+import { $, esc, parseNum, parseDate, todayISO, normKey, fmt0, uid } from './utils.js?v=13';
+import { STATE, activeBike, syncOdometer, commit, migrate } from './state.js?v=13';
+import { UI } from './ui.js?v=13';
+import { render } from './render.js?v=13';
 
 const HEADER_ALIASES = {
   type:      ["tipo", "categoria", "category", "registro", "clase"],
@@ -114,12 +114,7 @@ export function runConfirmImport() {
 
       if (isFuel && !isMaint) {
         const gallons = idx.gallons !== undefined ? parseNum(r[idx.gallons]) : 0;
-        
-        // FILTRO DE SEGURIDAD: Si los galones superan la capacidad del tanque (ej. 2382), lo ignoramos.
-        if (gallons > (b.tankCapacity + 2)) {
-          ignoredLargeGallons++;
-          return; // Ignorar este registro absurdo
-        }
+        if (gallons > (b.tankCapacity + 2)) { ignoredLargeGallons++; return; }
 
         const fullTank = idx.fullTank !== undefined ? boolFromCell(r[idx.fullTank]) : false;
         const dup = b.fuel.some(f => f.date === date && Math.round(f.km) === Math.round(km));
@@ -152,9 +147,7 @@ export function runConfirmImport() {
     commit();
 
     let msg = `Importación completada ✅\n\n• Gasolina agregada: ${addedFuel}\n• Mantenimientos agregados: ${addedMaint}\n• Duplicados omitidos: ${skipped}\n• Filas inválidas: ${invalid}\n• Odómetro actualizado a: ${fmt0(b.odometer)} km`;
-    if (ignoredLargeGallons > 0) {
-      msg += `\n\n⚠️ SE IGNORARON ${ignoredLargeGallons} registros de gasolina porque tenían más galones que la capacidad de tu tanque (error de punto decimal).`;
-    }
+    if (ignoredLargeGallons > 0) msg += `\n\n⚠️ SE IGNORARON ${ignoredLargeGallons} registros de gasolina porque tenían más galones que la capacidad de tu tanque (error de punto decimal).`;
     alert(msg);
   } catch (err) {
     alert("Error al importar: " + err.message);

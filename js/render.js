@@ -1,14 +1,17 @@
-import { $, $$, esc } from './utils.js?v=9';
-import { STATE, activeBike } from './state.js?v=9';
-import { UI } from './ui.js?v=9';
-import * as views from './views.js?v=9';
+import { $, $$, esc } from './utils.js?v=13';
+import { STATE, activeBike } from './state.js?v=13';
+import { UI } from './ui.js?v=13';
+import * as views from './views.js?v=13';
 
 export function render() {
+  if (!STATE.bikes || STATE.bikes.length === 0) return;
   const b = activeBike();
   const sel = $("#bikeSel");
+  if (!sel) return;
   sel.innerHTML = STATE.bikes.map(x => `<option value="${x.id}" ${x.id === b.id ? "selected" : ""}>${esc(x.name)}</option>`).join("");
   document.body.classList.toggle("light", STATE.theme === "light");
-  $('[data-act="toggleTheme"]').textContent = STATE.theme === "light" ? "☀️" : "🌙";
+  const themeBtn = $('[data-act="toggleTheme"]');
+  if (themeBtn) themeBtn.textContent = STATE.theme === "light" ? "☀️" : "🌙";
   $$("#tabbar button").forEach(btn => btn.classList.toggle("on", btn.dataset.view === UI.view));
   
   let html = "";

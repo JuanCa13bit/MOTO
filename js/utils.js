@@ -15,12 +15,10 @@ export const humanDate = iso => { if (!iso) return "—"; const d = new Date(iso
 export const worst = (a, b) => (LEVEL_RANK[a] >= LEVEL_RANK[b] ? a : b);
 
 export function parseNum(v) {
-  if (v === null || v === undefined || v === "") return 0; // Vacíos son 0
+  if (v === null || v === undefined || v === "") return 0;
   if (typeof v === "number") return isFinite(v) ? v : 0;
-  
   let s = String(v).trim().replace(/[^\d.,-]/g, "");
   if (!s || s === "-") return 0;
-  
   const lc = s.lastIndexOf(","), ld = s.lastIndexOf(".");
   if (lc > -1 && ld > -1) {
     if (lc > ld) s = s.replace(/\./g, "").replace(",", ".");
@@ -31,11 +29,7 @@ export function parseNum(v) {
     else s = s.replace(/,/g, "");
   } else if (ld > -1) {
     const parts = s.split(".");
-    // Si el número es menor a 10 (ej. 2.382) o es 0.xxx, es un decimal.
-    // Si es mayor a 10 (ej. 1.500) y tiene 3 decimales, es separador de miles.
-    if (parts[0].length > 2 && parts[1].length === 3) {
-      s = s.replace(/\./g, "");
-    }
+    if (parts[0].length > 2 && parts[1].length === 3) s = s.replace(/\./g, "");
   }
   const n = parseFloat(s);
   return isFinite(n) ? n : 0;

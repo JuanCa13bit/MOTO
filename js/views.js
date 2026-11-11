@@ -1,7 +1,7 @@
-import { $, esc, fmt, fmt0, humanDate, todayISO, LEVEL_RANK } from './utils.js?v=11';
-import { STATE, activeBike, DOC_TYPES, syncOdometer } from './state.js?v=11';
-import { computeStatus, statusText, fuelStats, autonomyLevel, getFuelLevelInfo, getMaintRemaining } from './calc.js?v=11';
-import { UI } from './ui.js?v=11';
+import { $, esc, fmt, fmt0, humanDate, todayISO, LEVEL_RANK } from './utils.js?v=13';
+import { STATE, activeBike, DOC_TYPES, syncOdometer } from './state.js?v=13';
+import { computeStatus, statusText, fuelStats, autonomyLevel, getFuelLevelInfo, getMaintRemaining } from './calc.js?v=13';
+import { UI } from './ui.js?v=13';
 
 export function renderChart(segments) {
   return `<p class="mu sm">El cálculo ahora es bayesiano (basado en tus últimas 5 cargas).</p>`;
