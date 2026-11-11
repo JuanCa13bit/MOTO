@@ -154,4 +154,12 @@ window.addEventListener('statechange', () => render());
   saveState(); 
   render();
   document.addEventListener("visibilitychange", () => { if (!document.hidden) render(); });
+// Registrar el Service Worker para que se vuelva una App instalable
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('Service Worker registrado ✅'))
+      .catch(err => console.log('Error al registrar SW', err));
+  });
+}
 })();
