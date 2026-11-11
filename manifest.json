@@ -1,0 +1,17 @@
+{
+  "name": "MotoControl",
+  "short_name": "MotoControl",
+  "description": "Control de gasolina, mantenimiento y documentos de tu motocicleta",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0d1015",
+  "theme_color": "#0d1015",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='96' fill='%230d1015'/><text x='256' y='340' font-size='260' text-anchor='middle' fill='%233b82f6'>🏍️</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
